@@ -1,0 +1,87 @@
+{
+  "ticker": "TTWO",
+  "count": 10,
+  "collected_at": "2026-06-21T11:19:20.855854Z",
+  "articles": [
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    }
+  ]
+}

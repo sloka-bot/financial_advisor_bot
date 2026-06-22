@@ -1,0 +1,87 @@
+{
+  "ticker": "CSCO",
+  "count": 10,
+  "collected_at": "2026-06-21T11:19:11.282983Z",
+  "articles": [
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    }
+  ]
+}

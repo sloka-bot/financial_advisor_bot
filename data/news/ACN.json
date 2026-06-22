@@ -1,0 +1,87 @@
+{
+  "ticker": "ACN",
+  "count": 10,
+  "collected_at": "2026-06-22T04:00:16.341834Z",
+  "articles": [
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    }
+  ]
+}

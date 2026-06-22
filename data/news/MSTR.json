@@ -1,0 +1,87 @@
+{
+  "ticker": "MSTR",
+  "count": 10,
+  "collected_at": "2026-06-21T11:19:22.120036Z",
+  "articles": [
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    }
+  ]
+}

@@ -1,0 +1,15 @@
+{
+  "cv_auc_mean": 0.9997,
+  "cv_auc_std": 0.0002,
+  "cv_fold_aucs": [
+    0.9996,
+    0.9995,
+    1.0,
+    1.0,
+    0.9995
+  ],
+  "cv_direction_acc": 0.9998,
+  "n_features": 45,
+  "n_samples": 19270,
+  "trained_at": "2026-06-22T19:57:57.003026"
+}

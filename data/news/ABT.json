@@ -1,0 +1,87 @@
+{
+  "ticker": "ABT",
+  "count": 10,
+  "collected_at": "2026-06-22T04:00:15.081059Z",
+  "articles": [
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    },
+    {
+      "uuid": "",
+      "title": "",
+      "publisher": "",
+      "link": "",
+      "published_at": null,
+      "content": ""
+    }
+  ]
+}

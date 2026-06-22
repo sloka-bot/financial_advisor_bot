@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>FinAdvisor</title>
+  <link rel="stylesheet" href="css/main.css" />
+  <script src="https://cdn.jsdelivr.net/npm/@clerk/clerk-js@latest/dist/clerk.browser.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+</head>
+<body>
+
+  <!-- ── AUTH SCREENS ──────────────────────────────────────────────────── -->
+
+  <!-- sign-in page -->
+  <div id="page-signin" class="auth-page" style="display:none">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <svg width="40" height="40" viewBox="0 0 28 28" fill="none">
+          <rect width="28" height="28" rx="7" fill="#00C896" fill-opacity="0.15"/>
+          <path d="M6 20L11 13L15 16L20 8" stroke="#00C896" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="20" cy="8" r="2" fill="#00C896"/>
+        </svg>
+        <span class="auth-brand">FinAdvisor</span>
+      </div>
+      <div class="auth-title">Welcome back</div>
+      <div class="auth-sub">Sign in to your portfolio</div>
+      <div id="clerk-signin-mount"></div>
+      <div class="auth-switch">
+        New here? <a href="#" id="go-signup">Create an account</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- sign-up page -->
+  <div id="page-signup" class="auth-page" style="display:none">
+    <div class="auth-card">
+      <div class="auth-logo">
+        <svg width="40" height="40" viewBox="0 0 28 28" fill="none">
+          <rect width="28" height="28" rx="7" fill="#00C896" fill-opacity="0.15"/>
+          <path d="M6 20L11 13L15 16L20 8" stroke="#00C896" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="20" cy="8" r="2" fill="#00C896"/>
+        </svg>
+        <span class="auth-brand">FinAdvisor</span>
+      </div>
+      <div class="auth-title">Get started</div>
+      <div class="auth-sub">Create your account to start investing</div>
+      <div id="clerk-signup-mount"></div>
+      <div class="auth-switch">
+        Already have an account? <a href="#" id="go-signin">Sign in</a>
+      </div>
+    </div>
+  </div>
+
+  <!-- ── MAIN APP ───────────────────────────────────────────────────────── -->
+
+  <div id="app-layout" style="display:none">
+    <aside id="sidebar">
+      <div class="sidebar-logo">
+        <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+          <rect width="28" height="28" rx="7" fill="#00C896" fill-opacity="0.15"/>
+          <path d="M6 20L11 13L15 16L20 8" stroke="#00C896" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+          <circle cx="20" cy="8" r="2" fill="#00C896"/>
+        </svg>
+        <span class="logo-text">FinAdvisor</span>
+      </div>
+
+      <nav class="sidebar-nav">
+        <a class="nav-item active" data-page="dashboard">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none"><rect x="2" y="2" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="2" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="2" y="11" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/><rect x="11" y="11" width="7" height="7" rx="1.5" stroke="currentColor" stroke-width="1.5"/></svg>
+          Dashboard
+        </a>
+        <a class="nav-item" data-page="analysis">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none"><path d="M3 3v14h14" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/><path d="M6 14l3-5 3 3 4-7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          Analysis
+        </a>
+        <a class="nav-item" data-page="portfolio">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none"><path d="M3 7h14M3 7a2 2 0 01-2-2V4a2 2 0 012-2h14a2 2 0 012 2v1a2 2 0 01-2 2M3 7v9a2 2 0 002 2h10a2 2 0 002-2V7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Portfolio
+        </a>
+        <a class="nav-item" data-page="advisor">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none"><path d="M10 2a6 6 0 016 6c0 2.4-1.4 4.5-3.5 5.5L10 18l-2.5-4.5A6 6 0 1110 2z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/><circle cx="10" cy="8" r="2" stroke="currentColor" stroke-width="1.5"/></svg>
+          Advisor
+        </a>
+        <a class="nav-item" data-page="tools">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none"><circle cx="10" cy="10" r="3" stroke="currentColor" stroke-width="1.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Tools
+        </a>
+
+        <div class="nav-section-label">Coming soon</div>
+        <a class="nav-item nav-future">
+          <svg class="nav-icon" viewBox="0 0 20 20" fill="none"><path d="M10 2a8 8 0 100 16A8 8 0 0010 2zm0 4v4l3 3" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+          Alerts <span class="future-tag">Soon</span>
+        </a>
+      </nav>
+
+      <div class="sidebar-footer">
+        <div class="run-section">
+          <div class="run-controls">
+            <select id="sb-market" class="styled-select styled-select-sm"></select>
+            <select id="sb-index"  class="styled-select styled-select-sm"></select>
+            <select id="sb-risk"   class="styled-select styled-select-sm">
+              <option value="conservative">Conservative</option>
+              <option value="moderate" selected>Moderate</option>
+              <option value="aggressive">Aggressive</option>
+            </select>
+            <div class="budget-row">
+              <label class="field-label" style="margin:0;font-size:10px">Budget ($)</label>
+              <input id="sb-budget" class="field-input" type="number" value="10000" min="100"/>
+            </div>
+            <div style="display:flex;gap:10px">
+              <label style="font-size:11px;color:var(--txt-2);display:flex;align-items:center;gap:5px;cursor:pointer">
+                <input type="radio" name="scope" value="sample" checked/> Quick (10)
+              </label>
+              <label style="font-size:11px;color:var(--txt-2);display:flex;align-items:center;gap:5px;cursor:pointer">
+                <input type="radio" name="scope" value="all"/> Full index
+              </label>
+            </div>
+          </div>
+          <button id="run-btn" class="btn-run">
+            <span class="run-label">Run Analysis</span>
+            <span class="run-spinner hidden">
+              <svg class="spin" width="14" height="14" viewBox="0 0 24 24" fill="none">
+                <circle cx="12" cy="12" r="10" stroke="currentColor" stroke-width="2.5" stroke-dasharray="31.4 31.4" stroke-linecap="round"/>
+              </svg>
+            </span>
+          </button>
+          <div id="pipeline-status" class="pipeline-status hidden"></div>
+        </div>
+
+        <!-- user info -->
+        <div id="user-row" style="display:flex;align-items:center;justify-content:space-between;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+          <div style="display:flex;align-items:center;gap:8px">
+            <div id="user-avatar" style="width:26px;height:26px;border-radius:50%;background:var(--green-dim);border:1px solid var(--green);display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;color:var(--green)"></div>
+            <div id="user-name" style="font-size:12px;color:var(--txt-2)"></div>
+          </div>
+          <button id="logout-btn" class="btn-secondary" style="padding:4px 10px;font-size:11px">Sign out</button>
+        </div>
+      </div>
+    </aside>
+
+    <main id="main-content">
+      <header id="top-bar">
+        <div id="page-title" class="page-heading">Dashboard</div>
+        <div class="top-bar-right">
+          <div id="model-badge" class="model-badge">
+            <span class="badge-dot" id="model-dot"></span>
+            <span id="model-label">Models not trained</span>
+          </div>
+          <button class="icon-btn" id="refresh-btn" title="Refresh">
+            <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M13.5 8A5.5 5.5 0 112.5 8M2.5 8V3.5M2.5 3.5H7" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+          </button>
+        </div>
+      </header>
+
+      <div id="content-area">
+        <div id="view-dashboard" class="view active"></div>
+        <div id="view-analysis"  class="view"></div>
+        <div id="view-portfolio" class="view"></div>
+        <div id="view-advisor"   class="view"></div>
+        <div id="view-tools"     class="view"></div>
+      </div>
+    </main>
+  </div>
+
+  <div id="toast" class="toast hidden"></div>
+
+  <script src="js/state.js"></script>
+  <script src="js/api.js"></script>
+  <script src="js/charts.js"></script>
+  <script src="js/dashboard.js"></script>
+  <script src="js/analysis.js"></script>
+  <script src="js/portfolio.js"></script>
+  <script src="js/advisor.js"></script>
+  <script src="js/tools.js"></script>
+  <script src="js/onboarding.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

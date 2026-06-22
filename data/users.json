@@ -1,0 +1,505 @@
+{
+  "users": {
+    "dev-user": {
+      "user_id": "dev-user",
+      "name": "",
+      "risk_profile": "moderate",
+      "investment_horizon": "< 1 year",
+      "goal": "growth",
+      "budget": 5000.0,
+      "monthly_contribution": 500.0,
+      "created_at": "2026-06-22T16:08:31.947945",
+      "updated_at": "2026-06-22T16:08:31.947945",
+      "portfolio": {
+        "holdings": [
+          {
+            "ticker": "PAYX",
+            "shares": 5,
+            "price": 97.58,
+            "total_cost": 487.9,
+            "signal": "BUY",
+            "predicted_return": 0.59,
+            "sentiment": "neutral",
+            "weight_pct": 9.57
+          },
+          {
+            "ticker": "PCAR",
+            "shares": 3,
+            "price": 117.34,
+            "total_cost": 352.02,
+            "signal": "BUY",
+            "predicted_return": 0.58,
+            "sentiment": "neutral",
+            "weight_pct": 6.9
+          }
+        ],
+        "cash": 4160.08,
+        "updated_at": "2026-06-22T16:18:27.324996"
+      },
+      "pending_recommendations": [
+        {
+          "action": "BUY",
+          "ticker": "PCAR",
+          "signal": "BUY",
+          "score": 100.0,
+          "confidence": 56,
+          "factors": {
+            "model_signal": 62,
+            "sentiment": 50,
+            "momentum": 62,
+            "trend_strength": 47
+          },
+          "reason": "PCAR rated BUY: composite score 100/100.",
+          "predicted_return": 0.5,
+          "id": 1,
+          "created_at": "2026-06-22T19:16:32.597540",
+          "status": "pending"
+        },
+        {
+          "action": "BUY",
+          "ticker": "AAPL",
+          "signal": "BUY",
+          "score": 90.0,
+          "confidence": 53,
+          "factors": {
+            "model_signal": 63,
+            "sentiment": 50,
+            "momentum": 26,
+            "trend_strength": 72
+          },
+          "reason": "AAPL rated BUY: strong directional trend (ADX elevated).",
+          "predicted_return": 0.53,
+          "id": 2,
+          "created_at": "2026-06-22T19:16:32.597866",
+          "status": "pending"
+        },
+        {
+          "action": "BUY",
+          "ticker": "PAYX",
+          "signal": "BUY",
+          "score": 80.0,
+          "confidence": 56,
+          "factors": {
+            "model_signal": 63,
+            "sentiment": 50,
+            "momentum": 45,
+            "trend_strength": 62
+          },
+          "reason": "PAYX rated BUY: composite score 80/100.",
+          "predicted_return": 0.52,
+          "id": 3,
+          "created_at": "2026-06-22T19:16:32.597868",
+          "status": "pending"
+        },
+        {
+          "action": "BUY",
+          "ticker": "AMAT",
+          "signal": "BUY",
+          "score": 70.0,
+          "confidence": 67,
+          "factors": {
+            "model_signal": 63,
+            "sentiment": 50,
+            "momentum": 98,
+            "trend_strength": 71
+          },
+          "reason": "AMAT rated BUY: bullish momentum with RSI headroom, strong directional trend (ADX elevated).",
+          "predicted_return": 0.55,
+          "id": 4,
+          "created_at": "2026-06-22T19:16:32.597869",
+          "status": "pending"
+        },
+        {
+          "action": "SELL",
+          "ticker": "INTC",
+          "signal": "SELL",
+          "score": 30.0,
+          "confidence": 65,
+          "factors": {
+            "model_signal": 64,
+            "sentiment": 50,
+            "momentum": 81,
+            "trend_strength": 75
+          },
+          "reason": "INTC rated SELL \u2014 score 30/100.",
+          "predicted_return": 0.58,
+          "id": 5,
+          "created_at": "2026-06-22T19:16:32.597870",
+          "status": "pending"
+        },
+        {
+          "action": "BUY",
+          "ticker": "AES",
+          "signal": "BUY",
+          "score": 100.0,
+          "confidence": 61,
+          "factors": {
+            "model_signal": 62,
+            "sentiment": 50,
+            "momentum": 46,
+            "trend_strength": 100
+          },
+          "reason": "AES rated BUY: strong directional trend (ADX elevated).",
+          "predicted_return": 0.49,
+          "id": 6,
+          "created_at": "2026-06-22T19:34:58.034325",
+          "status": "pending"
+        },
+        {
+          "action": "BUY",
+          "ticker": "MMM",
+          "signal": "BUY",
+          "score": 90.0,
+          "confidence": 63,
+          "factors": {
+            "model_signal": 63,
+            "sentiment": 50,
+            "momentum": 68,
+            "trend_strength": 78
+          },
+          "reason": "MMM rated BUY: bullish momentum with RSI headroom, strong directional trend (ADX elevated).",
+          "predicted_return": 0.52,
+          "id": 7,
+          "created_at": "2026-06-22T19:34:58.034336",
+          "status": "pending"
+        },
+        {
+          "action": "BUY",
+          "ticker": "AOS",
+          "signal": "BUY",
+          "score": 80.0,
+          "confidence": 58,
+          "factors": {
+            "model_signal": 63,
+            "sentiment": 50,
+            "momentum": 60,
+            "trend_strength": 56
+          },
+          "reason": "AOS rated BUY: composite score 80/100.",
+          "predicted_return": 0.52,
+          "id": 8,
+          "created_at": "2026-06-22T19:34:58.034338",
+          "status": "pending"
+        },
+        {
+          "action": "SELL",
+          "ticker": "ACN",
+          "signal": "SELL",
+          "score": 40.0,
+          "confidence": 35,
+          "factors": {
+            "model_signal": 41,
+            "sentiment": 50,
+            "momentum": 0,
+            "trend_strength": 47
+          },
+          "reason": "ACN rated SELL \u2014 score 40/100.",
+          "predicted_return": -0.36,
+          "id": 9,
+          "created_at": "2026-06-22T19:34:58.034338",
+          "status": "pending"
+        },
+        {
+          "action": "SELL",
+          "ticker": "A",
+          "signal": "SELL",
+          "score": 30.0,
+          "confidence": 46,
+          "factors": {
+            "model_signal": 63,
+            "sentiment": 50,
+            "momentum": 0,
+            "trend_strength": 60
+          },
+          "reason": "A rated SELL \u2014 score 30/100.",
+          "predicted_return": 0.54,
+          "id": 10,
+          "created_at": "2026-06-22T19:34:58.034339",
+          "status": "pending"
+        },
+        {
+          "action": "BUY",
+          "ticker": "PCAR",
+          "signal": "BUY",
+          "score": 100.0,
+          "confidence": 57,
+          "factors": {
+            "model_signal": 64,
+            "sentiment": 50,
+            "momentum": 62,
+            "trend_strength": 47
+          },
+          "reason": "PCAR rated BUY: composite score 100/100.",
+          "predicted_return": 0.58,
+          "id": 11,
+          "created_at": "2026-06-22T19:59:45.116568",
+          "status": "pending"
+        },
+        {
+          "action": "BUY",
+          "ticker": "AAPL",
+          "signal": "BUY",
+          "score": 90.0,
+          "confidence": 54,
+          "factors": {
+            "model_signal": 64,
+            "sentiment": 50,
+            "momentum": 26,
+            "trend_strength": 72
+          },
+          "reason": "AAPL rated BUY: strong directional trend (ADX elevated).",
+          "predicted_return": 0.58,
+          "id": 12,
+          "created_at": "2026-06-22T19:59:45.116572",
+          "status": "pending"
+        },
+        {
+          "action": "BUY",
+          "ticker": "PAYX",
+          "signal": "BUY",
+          "score": 80.0,
+          "confidence": 56,
+          "factors": {
+            "model_signal": 64,
+            "sentiment": 50,
+            "momentum": 45,
+            "trend_strength": 62
+          },
+          "reason": "PAYX rated BUY: composite score 80/100.",
+          "predicted_return": 0.58,
+          "id": 13,
+          "created_at": "2026-06-22T19:59:45.116573",
+          "status": "pending"
+        },
+        {
+          "action": "BUY",
+          "ticker": "CTAS",
+          "signal": "BUY",
+          "score": 70.0,
+          "confidence": 49,
+          "factors": {
+            "model_signal": 64,
+            "sentiment": 50,
+            "momentum": 33,
+            "trend_strength": 33
+          },
+          "reason": "CTAS rated BUY: composite score 70/100.",
+          "predicted_return": 0.58,
+          "id": 14,
+          "created_at": "2026-06-22T19:59:45.116574",
+          "status": "pending"
+        },
+        {
+          "action": "SELL",
+          "ticker": "INTC",
+          "signal": "SELL",
+          "score": 30.0,
+          "confidence": 65,
+          "factors": {
+            "model_signal": 64,
+            "sentiment": 50,
+            "momentum": 81,
+            "trend_strength": 75
+          },
+          "reason": "INTC rated SELL \u2014 score 30/100.",
+          "predicted_return": 0.59,
+          "id": 15,
+          "created_at": "2026-06-22T19:59:45.116575",
+          "status": "pending"
+        }
+      ],
+      "recommendation_history": [
+        {
+          "action": "BUY",
+          "ticker": "AAPL",
+          "signal": "BUY",
+          "score": 100.0,
+          "confidence": 54,
+          "factors": {
+            "model_signal": 66,
+            "sentiment": 50,
+            "momentum": 26,
+            "trend_strength": 72
+          },
+          "reason": "AAPL rated BUY: model forecasts +0.65% tomorrow, strong directional trend (ADX elevated).",
+          "predicted_return": 0.65,
+          "id": 1,
+          "created_at": "2026-06-22T16:10:10.549508",
+          "status": "rejected",
+          "decided_at": "2026-06-22T16:18:03.385045"
+        },
+        {
+          "action": "SELL",
+          "ticker": "INTC",
+          "signal": "SELL",
+          "score": 30.0,
+          "confidence": 66,
+          "factors": {
+            "model_signal": 66,
+            "sentiment": 50,
+            "momentum": 81,
+            "trend_strength": 75
+          },
+          "reason": "INTC rated SELL \u2014 score 30/100.",
+          "predicted_return": 0.64,
+          "id": 5,
+          "created_at": "2026-06-22T16:10:10.549516",
+          "status": "approved",
+          "decided_at": "2026-06-22T16:18:09.734820"
+        },
+        {
+          "action": "BUY",
+          "ticker": "PAYX",
+          "signal": "BUY",
+          "score": 80.0,
+          "confidence": 56,
+          "factors": {
+            "model_signal": 64,
+            "sentiment": 50,
+            "momentum": 45,
+            "trend_strength": 62
+          },
+          "reason": "PAYX rated BUY: composite score 80/100.",
+          "predicted_return": 0.59,
+          "id": 3,
+          "created_at": "2026-06-22T16:10:10.549515",
+          "status": "approved",
+          "decided_at": "2026-06-22T16:18:15.521715"
+        },
+        {
+          "action": "BUY",
+          "ticker": "PCAR",
+          "signal": "BUY",
+          "score": 90.0,
+          "confidence": 57,
+          "factors": {
+            "model_signal": 64,
+            "sentiment": 50,
+            "momentum": 62,
+            "trend_strength": 47
+          },
+          "reason": "PCAR rated BUY: composite score 90/100.",
+          "predicted_return": 0.58,
+          "id": 2,
+          "created_at": "2026-06-22T16:10:10.549513",
+          "status": "approved",
+          "decided_at": "2026-06-22T16:18:27.146498"
+        },
+        {
+          "action": "BUY",
+          "ticker": "CTAS",
+          "signal": "BUY",
+          "score": 70.0,
+          "confidence": 50,
+          "factors": {
+            "model_signal": 65,
+            "sentiment": 50,
+            "momentum": 33,
+            "trend_strength": 33
+          },
+          "reason": "CTAS rated BUY: composite score 70/100.",
+          "predicted_return": 0.62,
+          "id": 4,
+          "created_at": "2026-06-22T16:10:10.549515",
+          "status": "rejected",
+          "decided_at": "2026-06-22T19:14:30.208728"
+        },
+        {
+          "action": "BUY",
+          "ticker": "PCAR",
+          "signal": "BUY",
+          "score": 100.0,
+          "confidence": 57,
+          "factors": {
+            "model_signal": 64,
+            "sentiment": 50,
+            "momentum": 62,
+            "trend_strength": 47
+          },
+          "reason": "PCAR rated BUY: composite score 100/100.",
+          "predicted_return": 0.58,
+          "id": 6,
+          "created_at": "2026-06-22T16:13:23.899745",
+          "status": "rejected",
+          "decided_at": "2026-06-22T19:14:30.778783"
+        },
+        {
+          "action": "BUY",
+          "ticker": "AAPL",
+          "signal": "BUY",
+          "score": 90.0,
+          "confidence": 54,
+          "factors": {
+            "model_signal": 64,
+            "sentiment": 50,
+            "momentum": 26,
+            "trend_strength": 72
+          },
+          "reason": "AAPL rated BUY: strong directional trend (ADX elevated).",
+          "predicted_return": 0.58,
+          "id": 7,
+          "created_at": "2026-06-22T16:13:23.900142",
+          "status": "rejected",
+          "decided_at": "2026-06-22T19:14:30.992353"
+        },
+        {
+          "action": "BUY",
+          "ticker": "AMAT",
+          "signal": "BUY",
+          "score": 80.0,
+          "confidence": 69,
+          "factors": {
+            "model_signal": 68,
+            "sentiment": 50,
+            "momentum": 98,
+            "trend_strength": 71
+          },
+          "reason": "AMAT rated BUY: model forecasts +0.73% tomorrow, bullish momentum with RSI headroom, strong directional trend (ADX elevated).",
+          "predicted_return": 0.73,
+          "id": 8,
+          "created_at": "2026-06-22T16:13:23.900145",
+          "status": "rejected",
+          "decided_at": "2026-06-22T19:14:31.209721"
+        },
+        {
+          "action": "BUY",
+          "ticker": "PAYX",
+          "signal": "BUY",
+          "score": 70.0,
+          "confidence": 56,
+          "factors": {
+            "model_signal": 64,
+            "sentiment": 50,
+            "momentum": 45,
+            "trend_strength": 62
+          },
+          "reason": "PAYX rated BUY: composite score 70/100.",
+          "predicted_return": 0.58,
+          "id": 9,
+          "created_at": "2026-06-22T16:13:23.900146",
+          "status": "rejected",
+          "decided_at": "2026-06-22T19:14:31.444231"
+        },
+        {
+          "action": "SELL",
+          "ticker": "INTC",
+          "signal": "SELL",
+          "score": 30.0,
+          "confidence": 66,
+          "factors": {
+            "model_signal": 67,
+            "sentiment": 50,
+            "momentum": 81,
+            "trend_strength": 75
+          },
+          "reason": "INTC rated SELL \u2014 score 30/100.",
+          "predicted_return": 0.71,
+          "id": 10,
+          "created_at": "2026-06-22T16:13:23.900147",
+          "status": "rejected",
+          "decided_at": "2026-06-22T19:14:32.095591"
+        }
+      ]
+    }
+  }
+}
