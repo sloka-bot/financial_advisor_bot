@@ -18,3 +18,27 @@ data/features/
 .env
 .DS_Store
 
+
+# Local caches and runtime files
+_to_delete/
+__MACOSX/
+
+.ruff_cache/
+.pytest_cache/
+run_snapshots/
+data/logs/
+data/users.json
+data/recommendation_outcomes.json
+
+# Retraining keeps timestamped model copies here; not for submission
+models/**/archive/
+models/_session/
+
+# Root-level backup archives (not for submission)
+/*.zip
+
+# Large raw corpora / heavy experiment artifacts (keep small result JSONs)
+data/news/
+data/fnspid/
+data/experiments/ppo_seeds/
+data/experiments/cache/
