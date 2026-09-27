@@ -1,0 +1,1 @@
+{"name":"financial-advisor-frontend","private":true,"scripts":{"build:avatar":"node vendor/build.mjs"},"devDependencies":{"@heygen/liveavatar-web-sdk":"0.0.19","esbuild":"0.25.10"}}
