@@ -71,16 +71,19 @@ must be opened at `http://localhost:8000/app/` - opening the HTML file directly
 
 ## First-time use
 
-Models and data are prepared through the research scripts before opening the app.
-The normal interface loads the saved models rather than starting training.
-Create a risk profile and budget, or import holdings, then review proposals in
-Portfolio. Approval records a local portfolio change and does not place a brokerage order.
+The trained models are already saved in `models/`, so no training is needed before
+using the app. Start the backend as shown above and open the app at
+`http://localhost:8000/app/` in a browser. Opening `frontend/index.html` directly
+does not work. Create a risk profile and budget, or import holdings, then review
+proposals on the Portfolio page. Approving a proposal updates the local portfolio
+only and does not place a brokerage order.
 
 ## Regenerating models
 
-All training scripts train on the <=2023 news-covered window (matching the
-evaluation and the report - they default to `--end 2023-12-31`) and apply the
-point-in-time S&P 500 membership filter.
+Optional. The saved models were produced with the commands below, which only need
+to be run again to rebuild them from scratch. Training uses data up to
+2023-12-31 (the news-covered window used in the report) and the point-in-time
+S&P 500 membership filter.
 
 ```bash
 # Primary 21-day models (deployed to models/xgboost and models/lstm):
