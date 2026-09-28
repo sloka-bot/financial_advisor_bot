@@ -1,6 +1,6 @@
 /* Saved holdings and explicit approval of proposed transactions. */
 const RETURN_PERIOD =
-  "21 sessions"; /* the single horizon the model estimates */
+  "21 sessions"; /* horizon used by the recommendation model */
 
 function renderPortfolio() {
   document.getElementById("view-portfolio").innerHTML = `
@@ -83,11 +83,11 @@ function bindPortfolioEvents() {
       return;
     }
     if (action === "build-portfolio") {
-      generateNewRecs();
+      buildPortfolio();
       return;
     }
     if (action === "refresh-recs") {
-      loadPendingRecommendations();
+      generateNewRecs();
       return;
     }
     if (action === "refresh-advice") {
@@ -106,6 +106,14 @@ function bindPortfolioEvents() {
       rejectRec(Number(target.dataset.rec));
       return;
     }
+    if (action === "buy-more") {
+      buyMoreHolding(target.dataset.ticker);
+      return;
+    }
+    if (action === "sell") {
+      sellHolding(target.dataset.ticker);
+      return;
+    }
     if (target.dataset.ticker) {
       goAnalysis(target.dataset.ticker);
     }
@@ -121,7 +129,7 @@ function bindPortfolioEvents() {
   });
 }
 
-/* --- Recommendations panel --- */
+/* Recommendations panel */
 
 async function loadPendingRecommendations() {
   const userId = state.userId;
@@ -153,12 +161,12 @@ async function loadPendingRecommendations() {
         <div class="rec-box-head">
           <div>
             <div class="chart-title">Advisor recommendations</div>
-            <div class="rec-box-sub">${pending.length} pending - approve to add to your portfolio, reject to dismiss</div>
+            <div class="rec-box-sub">Showing ${Math.min(3, pending.length)} of ${pending.length} pending. Approve or dismiss to see the next recommendation.</div>
           </div>
           <button class="btn-secondary btn-xs" data-action="refresh-recs">Refresh</button>
         </div>
         <div class="rec-legend">BUY = model expects price to rise &nbsp;|&nbsp; SELL = model expects price to fall &nbsp;|&nbsp; Support score = a heuristic combining model, sentiment and technical signals; not a probability</div>
-        <div class="rec-list">${pending.map((rec) => recCard(rec, inPortfolio)).join("")}</div>
+        <div class="rec-list">${pending.slice(0, 3).map((rec) => recCard(rec, inPortfolio)).join("")}</div>
       </div>`;
   } catch (error) {
     toast(error.message, "error");
@@ -225,9 +233,16 @@ async function generateNewRecs() {
     panel.innerHTML =
       '<div class="rec-loading">Generating recommendations from trained model...</div>';
   try {
-    await api.generateRecs(state.userId);
+    const res = await api.generateRecs(state.userId);
     await loadPendingRecommendations();
-    toast("New recommendations generated", "success");
+    const n =
+      res && typeof res.generated === "number"
+        ? res.generated
+        : (res && res.pending && res.pending.length) || 0;
+    if (n > 0)
+      toast(`Generated ${n} recommendation${n === 1 ? "" : "s"}`, "success");
+    else
+      toast("No new eligible signals meet the current cash and risk limits", "info");
   } catch (error) {
     toast("Could not generate: " + (error.detail || error.message), "error");
     loadPendingRecommendations();
@@ -280,7 +295,93 @@ async function rejectRec(recId) {
   }
 }
 
-/* --- Portfolio population --- */
+async function refreshBook() {
+  const port = await api.getUserPortfolio(state.userId);
+  if (!port) return;
+  state.portfolioData = state.portfolioData || {};
+  state.portfolioData.portfolio = state.portfolioData.portfolio || {};
+  const holdings = port.holdings || [];
+  const cash =
+    typeof port.cash === "number" ? port.cash : port.cash_remaining || 0;
+  const invested =
+    port.total_invested ??
+    holdings.reduce((sum, h) => sum + (h.current_value ?? h.total_cost ?? 0), 0);
+  Object.assign(state.portfolioData.portfolio, port, {
+    holdings,
+    cash,
+    cash_remaining: cash,
+    total_invested: invested,
+    n_positions: holdings.length,
+  });
+  updatePortfolio(state.portfolioData);
+  if (typeof renderDashboard === "function") renderDashboard();
+}
+
+async function buyMoreHolding(ticker) {
+  const entered = prompt(`How many additional whole shares of ${ticker}?`);
+  if (entered === null) return;
+  const shares = Number(entered);
+  if (!Number.isSafeInteger(shares) || shares < 1) {
+    toast("Enter a positive whole number of shares", "error");
+    return;
+  }
+  try {
+    const result = await api.buyMore(state.userId, ticker, shares);
+    toast(`Added ${shares} shares of ${ticker}. Fees: ${money(result.fees)}`, "success");
+    await refreshBook();
+    await loadPendingRecommendations();
+  } catch (error) {
+    toast(error.message, "error");
+  }
+}
+
+async function sellHolding(ticker) {
+  if (!ticker) return;
+  if (!confirm(`Sell your entire ${ticker} position and credit the proceeds to cash?`))
+    return;
+  try {
+    const res = await api.sellHolding(state.userId, ticker);
+    toast(`Sold ${ticker} for ${money(res.proceeds)}`, "success");
+    await refreshBook();
+    loadPendingRecommendations();
+  } catch (error) {
+    toast("Could not sell: " + (error.detail || error.message), "error");
+  }
+}
+
+async function buildPortfolio() {
+  const userId = state.userId;
+  if (!userId) {
+    toast("Create a profile first", "error");
+    return;
+  }
+  if (
+    !confirm(
+      "Build an allocation of up to five stocks from your available cash and add it to your current holdings? Fees and your whole-portfolio risk limits apply.",
+    )
+  )
+    return;
+  const panel = document.getElementById("rec-panel");
+  try {
+    if (panel)
+      panel.innerHTML =
+        '<div class="rec-loading">Building an allocation of up to five stocks...</div>';
+    const res = await api.buildPortfolio(userId);
+    await refreshBook();
+    loadPendingRecommendations();
+    if (res && res.built > 0)
+      toast(
+        `Added ${res.built} holding${res.built === 1 ? "" : "s"} to your portfolio`,
+        "success",
+      );
+    else toast("No affordable names to add right now", "info");
+  } catch (error) {
+    toast("Could not build portfolio: " + (error.detail || error.message), "error");
+    loadPendingRecommendations();
+  }
+}
+
+/* Portfolio population */
 
 function updatePortfolio(data) {
   const p = data?.portfolio;
@@ -361,7 +462,7 @@ function renderDriftPanel(suggestions) {
     </div>`;
 }
 
-/* --- Holdings table --- */
+/* Holdings table */
 
 function renderHoldings(holdings) {
   const wrap = document.getElementById("holdings-wrap");
@@ -378,7 +479,7 @@ function renderHoldings(holdings) {
       <thead><tr>
         <th>Ticker</th><th>Signal</th><th>Support</th><th>Batch rank</th>
         <th>Shares</th><th>Price</th><th>Cost</th>
-        <th>Weight</th><th>Predicted (${RETURN_PERIOD})</th><th>Allocation</th>
+        <th>Weight</th><th>Predicted (${RETURN_PERIOD})</th><th>Allocation</th><th>Action</th>
       </tr></thead>
       <tbody id="holdings-tbody">${holdings.map((h) => holdingRow(h, maxCost)).join("")}</tbody>
     </table>`;
@@ -404,10 +505,11 @@ function holdingRow(h, maxCost) {
       <div class="pct-bar-wrap"><div class="pct-bar" style="width:${pct}%"></div></div>
       <div class="holding-detail">${(h.weight_pct ?? 0).toFixed(1)}%</div>
     </td>
+    <td><button class="btn-secondary btn-xs" data-action="buy-more" data-ticker="${escapeHtml(h.ticker)}">Buy more</button> <button class="btn-secondary btn-xs" data-action="sell" data-ticker="${escapeHtml(h.ticker)}" title="Sell all ${escapeHtml(h.ticker)}">Sell</button></td>
   </tr>`;
 }
 
-/* The model estimates one 21-session return. Other horizons would need separate models. */
+/* Predicted return from the 21-session model. */
 function predictedReturn(h) {
   return Number.isFinite(h.predicted_return) ? h.predicted_return : null;
 }

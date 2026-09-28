@@ -1,18 +1,4 @@
-"""
-rl_agent.py
-
-PPO portfolio-allocation agent, trained with Stable-Baselines3 on PortfolioEnv.
-At inference it turns a market observation into target weights for each stock
-and cash. Two modes serve the advisor: build a fresh portfolio, or rebalance an
-existing one into buy/sell deltas. Risk-profile limits (max position, min cash)
-are applied after the policy so the output always respects the user's profile.
-
-PPO is used because the action space is continuous (weights in [0, 1]), which
-rules out DQN; its clipped objective avoids the destructive updates that
-destabilise A2C on financial time series.
-
-Reference: Schulman et al. (2017) Proximal Policy Optimization Algorithms.
-"""
+"""Train and evaluate a PPO allocation policy with profile-constrained stock and cash weights."""
 
 import json
 import logging
@@ -20,16 +6,11 @@ from pathlib import Path
 
 import numpy as np
 
-from backend.config.settings import RF_ANNUAL
 from backend.config.settings import RISK_CONSTRAINTS as RISK_LIMITS
 from backend.evaluation.metrics import annualized_sharpe
 
 logger = logging.getLogger(__name__)
 MODELS_DIR = Path("models/rl")
-
-# Per-profile allocation limits come from the ONE source of truth in settings.
-# (RISK_CONSTRAINTS also carries risk_aversion, which constrain() ignores.) There
-# is deliberately no second copy here to drift out of sync.
 
 
 class RLPortfolioAgent:
@@ -39,7 +20,6 @@ class RLPortfolioAgent:
         MODELS_DIR.mkdir(parents=True, exist_ok=True)
         self.model = None
 
-    # train PPO on the environment for the given number of timesteps
     def train(self, env, total_timesteps: int = 100_000, seed: int = None) -> dict:
         """Fit PPO on the training environment and persist weights and progress."""
         import time
@@ -73,8 +53,7 @@ class RLPortfolioAgent:
             def _on_step(self):
                 return True
 
-        # macOS: PyTorch stalls when it oversubscribes CPU threads (this hung PPO at
-        # policy-network construction). Pin to one thread for deterministic CPU behaviour.
+        # Limit PyTorch CPU threads to avoid native-runtime contention on macOS.
         torch.set_num_threads(1)
         logger.info("building PPO model (single-threaded)...")
 
@@ -89,14 +68,14 @@ class RLPortfolioAgent:
             n_steps=2048,  # rollout length covers multi-day trends
             batch_size=64,
             n_epochs=10,
-            gamma=0.99,  # rewards far ahead still count
+            gamma=0.99,  # weight distant rewards
             gae_lambda=0.95,
-            clip_range=0.2,  # clip keeps policy steps small and stable
-            ent_coef=0.005,  # small entropy bonus avoids collapsing to all-cash
+            clip_range=0.2,  # clip keeps policy updates small
+            ent_coef=0.005,  # entropy bonus discourages an all-cash policy
             vf_coef=0.5,
             max_grad_norm=0.5,
             policy_kwargs={"net_arch": [256, 128, 64]},
-            seed=seed,  # reproducibility: the caller's per-run seed reaches PPO
+            seed=seed,  # per-run seed
             verbose=0,
         )
         self.seed = seed
@@ -106,16 +85,14 @@ class RLPortfolioAgent:
         self.save()
         return {"total_timesteps": total_timesteps, "saved_to": str(MODELS_DIR), "learning_curve": progress.curve}
 
-    # raw target weights from the policy (no risk constraints applied)
     def get_weights(self, obs: np.ndarray):
         """Return deterministic normalised policy weights, or None without a model."""
         if not self._loaded():
             return None
-        action, _ = self.model.predict(obs, deterministic=True)  # no exploration noise at inference
+        action, _ = self.model.predict(obs, deterministic=True)  # deterministic inference
         action = np.abs(action)
         return action / (action.sum() + 1e-8)
 
-    # apply per-profile caps: limit single-position size and hold minimum cash
     def constrain(self, weights, risk_profile: str = "moderate") -> np.ndarray:
         """Cap equity positions and allocate residual weight to cash."""
         lim = RISK_LIMITS.get(risk_profile, RISK_LIMITS["moderate"])
@@ -124,13 +101,12 @@ class RLPortfolioAgent:
         stocks, cash = w[:-1].copy(), float(w[-1])
         stocks = np.minimum(stocks, lim["max_weight"])  # cap each position
         invest_budget = max(0.0, 1.0 - lim["min_cash"])
-        if stocks.sum() > invest_budget and stocks.sum() > 0:  # scale down to leave min cash
+        if stocks.sum() > invest_budget and stocks.sum() > 0:  # scale down to keep minimum cash
             stocks *= invest_budget / stocks.sum()
         cash = 1.0 - stocks.sum()
         out = np.append(stocks, cash)
         return out / (out.sum() + 1e-8)
 
-    # MODE 1: build a fresh portfolio for a new user from the current observation
     def build_portfolio(self, obs, risk_profile: str = "moderate"):
         """Convert the current observation into profile-constrained target weights."""
         weights = self.get_weights(obs)
@@ -138,7 +114,6 @@ class RLPortfolioAgent:
             return None
         return self.constrain(weights, risk_profile)
 
-    # MODE 2: rebalance an existing portfolio into per-asset buy/sell deltas
     def rebalance(self, obs, current_weights, risk_profile: str = "moderate"):
         """Return target weights and signed changes from the current allocation."""
         target = self.build_portfolio(obs, risk_profile)
@@ -147,20 +122,10 @@ class RLPortfolioAgent:
         current = np.asarray(current_weights, dtype=float)
         current = current / (current.sum() + 1e-8)
         delta = target - current
-        return {"target_weights": target, "delta": delta}  # delta > 0 buy, < 0 sell
+        return {"target_weights": target, "delta": delta}  # positive buys, negative sells
 
-    # walk the policy over a held-out env and report risk-adjusted performance
     def evaluate(self, env, n_episodes: int = 5, risk_profile: str = "moderate") -> dict:
-        """Evaluate the trained policy on a held-out env.
-
-        Two properties this evaluation enforces:
-          * the policy's raw weights are passed through `constrain(...)` so the
-            agent is scored on the SAME profile-constrained weights the advisor
-            would actually execute (max position size + minimum cash), not on the
-            unconstrained raw output that bypasses the user's risk profile;
-          * max drawdown is aggregated as the WORST drawdown across ALL episodes,
-            not silently overwritten to the last episode's value each loop.
-        """
+        """Evaluate profile-constrained actions and retain the worst drawdown across episodes."""
         if not self._loaded():
             return {"error": "no model loaded"}
         episode_returns, daily_returns, episode_mdds = [], [], []
@@ -169,7 +134,7 @@ class RLPortfolioAgent:
             done = False
             values = [env.portfolio_value]
             while not done:
-                w = self.constrain(self.get_weights(obs), risk_profile)  # execute the CONSTRAINED weights
+                w = self.constrain(self.get_weights(obs), risk_profile)  # trade the constrained weights
                 obs, _, terminated, truncated, info = env.step(w)
                 done = terminated or truncated
                 values.append(info.get("portfolio_value", values[-1]))
@@ -219,7 +184,7 @@ class RLPortfolioAgent:
             return False
         return metadata.get("trading_protocol") == "next_close_v2"
 
-    # lazy-load the saved policy on first use
+    # Load the saved policy on first use.
     def _loaded(self) -> bool:
         if self.model:
             return True

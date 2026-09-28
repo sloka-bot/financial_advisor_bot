@@ -1,12 +1,4 @@
-"""
-metrics.py
-
-Single implementation of the return, risk and drawdown statistics used across
-the backtests, the walk-forward trading experiment and the PPO evaluation, so a
-metric's definition cannot drift between modules. Turnover and transaction cost
-live in backend.portfolio.transaction_costs and are re-exported here for a
-single import site.
-"""
+"""Shared return, risk and drawdown metrics for portfolio evaluations."""
 
 import numpy as np
 
@@ -52,12 +44,10 @@ def max_drawdown(curve, eps: float = 0.0) -> float:
     return float(((c - roll_max) / (roll_max + eps)).min())
 
 
-def annualized_sharpe(returns, ppy: float, rf_annual: float = RF_ANNUAL, eps: float = 1e-9, min_periods: int = 2) -> float:
-    """Annualised Sharpe ratio from period returns.
-
-    `ppy` is periods per year; the annual risk-free rate is converted to the
-    per-period rate. Returns 0.0 when fewer than `min_periods` observations exist.
-    """
+def annualized_sharpe(
+    returns, ppy: float, rf_annual: float = RF_ANNUAL, eps: float = 1e-9, min_periods: int = 2
+) -> float:
+    """Annualise excess-return Sharpe; return zero for fewer than min_periods observations."""
     r = np.asarray(returns, dtype=float)
     if len(r) < min_periods:
         return 0.0

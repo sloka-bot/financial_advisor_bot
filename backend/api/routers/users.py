@@ -7,11 +7,14 @@ from fastapi import APIRouter, HTTPException
 from backend import runtime
 from backend.api.schemas import (
     ApprovalRequest,
+    BuyRequest,
     ImportPortfolioRequest,
     ProfileRequest,
     ProfileUpdateRequest,
+    SellRequest,
 )
-from backend.data.contracts import freshness
+from backend.data.contracts import executable_price, freshness
+from backend.portfolio.allocation import build_markowitz_portfolio
 
 logger = logging.getLogger(__name__)
 router = APIRouter()
@@ -40,6 +43,33 @@ def update_profile(user_id: str, req: ProfileUpdateRequest):
     return {"updated": True, **profile}
 
 
+@router.get("/api/user/{user_id}/correlation")
+def holdings_correlation(user_id: str):
+    """Calculate recent daily-return correlations for the holdings heatmap."""
+    profile = runtime.user_store.get(user_id)
+    if not profile:
+        raise HTTPException(404, "User not found")
+    tickers = [h["ticker"] for h in profile.get("portfolio", {}).get("holdings", [])]
+    if len(tickers) < 2:
+        return {"tickers": tickers, "matrix": []}
+    import pandas as pd
+
+    series = {}
+    for t in tickers:
+        df = runtime.fusion.load_master(t)
+        if df is not None and not df.empty and "daily_return" in df.columns:
+            series[t] = df["daily_return"].tail(252)
+    valid = [t for t in tickers if t in series]
+    if len(valid) < 2:
+        return {"tickers": valid, "matrix": []}
+    frame = pd.DataFrame({t: series[t] for t in valid}).dropna()
+    if len(frame) < 20:
+        return {"tickers": valid, "matrix": []}
+    corr = frame.corr()
+    matrix = [[round(float(corr.loc[a, b]), 2) if pd.notna(corr.loc[a, b]) else None for b in valid] for a in valid]
+    return {"tickers": valid, "matrix": matrix}
+
+
 @router.get("/api/user/{user_id}/portfolio")
 def get_user_portfolio(user_id: str):
     """Return saved holdings valued from the available market data."""
@@ -61,8 +91,7 @@ def import_user_portfolio(user_id: str, req: ImportPortfolioRequest):
             "shares": h.shares,
             "price": h.price,
             "total_cost": round(h.shares * h.price, 2),
-            # No model has classified an imported holding, so its signal/support is
-            # unavailable rather than a fabricated HOLD/50.
+            # Imported holdings have no model signal until inference is available.
             "signal": "N/A",
             "confidence": None,
             "source": "manual_import",
@@ -107,8 +136,7 @@ def approve_recommendation(req: ApprovalRequest):
     profile = runtime.user_store.get(req.user_id)
     if not profile:
         raise HTTPException(404, "User not found")
-    # Read the pending rec without changing its status: execute first, then mark
-    # approved only on success, so a failed trade never looks approved.
+    # Read the proposal before execution; approval follows a successful trade.
     rec = runtime.user_store.get_pending_recommendation(req.user_id, req.rec_id)
     if not rec:
         raise HTTPException(404, "Recommendation not found")
@@ -145,8 +173,7 @@ def reject_recommendation(req: ApprovalRequest):
 
 @router.post("/api/recommendations/generate/{user_id}")
 def generate_new_recommendations(user_id: str):
-    """Generate a fresh set of recommendations from the currently trained models
-    without re-running the full data pipeline."""
+    """Refresh recommendations using existing models without retraining."""
     profile = runtime.user_store.get(user_id)
     if not profile:
         raise HTTPException(404, "User not found")
@@ -164,3 +191,107 @@ def generate_new_recommendations(user_id: str):
     )
     pending = runtime.user_store.get(user_id).get("pending_recommendations", [])
     return {"generated": len(pending), "pending": pending}
+
+
+def _current_market_data(profile, extra=()):
+    """Load current execution prices for the whole saved book and requested names."""
+    tickers = {h["ticker"] for h in profile.get("portfolio", {}).get("holdings", [])} | set(extra)
+    data = {t: runtime.fusion.load_master(t) for t in tickers}
+    missing = [t for t, frame in data.items() if not freshness(frame)["fresh"] or executable_price(frame) is None]
+    if missing:
+        raise HTTPException(409, "Refresh market data before trading: " + ", ".join(sorted(missing)))
+    return data
+
+
+def _manual_trade(user_id, ticker, action, shares=None):
+    profile = runtime.user_store.get(user_id)
+    if profile is None:
+        raise HTTPException(404, "User not found")
+    ticker = ticker.upper().strip()
+    data = _current_market_data(profile, [ticker])
+
+    def execute(current):
+        port = current.get("portfolio", {})
+        if ticker not in {h["ticker"] for h in port.get("holdings", [])}:
+            return {"error": "This ticker is no longer in your holdings"}
+        return runtime.portfolio_manager.apply_recommendation(
+            {"ticker": ticker, "action": action, "shares": shares, "sell_all": action == "SELL"},
+            port.get("holdings", []),
+            port.get("cash", 0),
+            data,
+            risk_profile=current.get("risk_profile", "moderate"),
+        )
+
+    result = runtime.user_store.execute_portfolio_action(user_id, execute, action=action)
+    if result is None or result.get("error") or result.get("respects_profile") is False:
+        raise HTTPException(409, (result or {}).get("error", "Trade would breach the portfolio limits"))
+    return result
+
+
+@router.post("/api/user/{user_id}/sell")
+def sell_user_holding(user_id: str, req: SellRequest):
+    """Sell a held position in the local book using observed prices and trading fees."""
+    return {"sold": True, **_manual_trade(user_id, req.ticker, "SELL")}
+
+
+@router.post("/api/user/{user_id}/buy")
+def buy_more_holding(user_id: str, req: BuyRequest):
+    """Add a requested whole-share quantity to a saved position within risk limits."""
+    return {"bought": True, **_manual_trade(user_id, req.ticker, "BUY", req.shares)}
+
+
+@router.post("/api/user/{user_id}/build")
+def build_and_merge_portfolio(user_id: str):
+    """Add up to five historical allocations without replacing the existing book."""
+    profile = runtime.user_store.get(user_id)
+    if profile is None:
+        raise HTTPException(404, "User not found")
+    with runtime.state_lock:
+        processed = list(runtime.pipeline_state.get("processed_tickers", []))
+    if not processed:
+        raise HTTPException(422, "No processed tickers - run analysis first")
+    port = profile.get("portfolio", {})
+    cash = float(port.get("cash", 0))
+    if cash <= 0:
+        raise HTTPException(409, "No available cash for additional holdings")
+    _, master_data = runtime.collect_predictions(processed)
+    master_data.update(_current_market_data(profile))
+    built = build_markowitz_portfolio(
+        master_data,
+        processed,
+        cash,
+        profile.get("risk_profile", "moderate"),
+        target_positions=5,
+    )["portfolio"]
+    if not built.get("available", True) or built.get("constraints_enforced") is False:
+        raise HTTPException(409, "An allocation within the selected limits is unavailable")
+
+    def execute(current):
+        if current.get("portfolio") != port or current.get("risk_profile") != profile.get("risk_profile"):
+            return {"error": "Your portfolio changed while building. Please try again."}
+        holdings = [dict(h) for h in port.get("holdings", [])]
+        balance = cash
+        count = 0
+        fees = 0.0
+        for candidate in built.get("holdings", []):
+            ticker = candidate["ticker"]
+            if not freshness(master_data.get(ticker))["fresh"]:
+                continue
+            result = runtime.portfolio_manager.apply_recommendation(
+                {"ticker": ticker, "action": "BUY", "max_shares": candidate["shares"]},
+                holdings,
+                balance,
+                master_data,
+                risk_profile=current.get("risk_profile", "moderate"),
+            )
+            if result.get("error") or result.get("respects_profile") is False:
+                continue
+            holdings, balance = result["holdings"], result["cash"]
+            fees += result.get("fees", 0)
+            count += 1
+        return {"holdings": holdings, "cash": balance, "built": count, "fees": fees, "respects_profile": True}
+
+    result = runtime.user_store.execute_portfolio_action(user_id, execute, action="BUILD")
+    if result is None or result.get("error"):
+        raise HTTPException(409, (result or {}).get("error", "Portfolio unavailable"))
+    return result

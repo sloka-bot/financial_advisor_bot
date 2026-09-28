@@ -1,42 +1,19 @@
-"""
-regime_detector.py
-
-Detects the current market regime (bull / bear / sideways) used to gate the
-portfolio constructor's conservatism.
-
-The primary detector is a Gaussian Hidden Markov Model (hmmlearn) fitted on the
-market's own return and volatility history - the same model family used in the
-offline experiment harness (run_experiments.py `_hmm_select`), so the live app
-and the experiments now speak about "regime" in the same terms. The HMM learns
-latent states from the data rather than firing on hand-tuned thresholds; each
-latent state is then labelled bull / bear / sideways by its mean return, and the
-regime for "now" is the state the model assigns to the most recent observation,
-with the state's posterior probability as the confidence.
-
-If hmmlearn is unavailable, or there is too little history to fit a stable HMM,
-the detector falls back to the previous cross-sectional heuristic (breadth +
-ADX trend strength + momentum) so the app never loses regime information. The
-returned `method` field records which path produced the answer.
-
-References:
-  Hamilton (1989) - regime-switching models of the business cycle.
-  Rabiner (1989) - hidden Markov models.
-"""
+"""Estimate regimes from a mean-price market proxy using an HMM or labelled heuristic fallback."""
 
 import logging
 
 import numpy as np
 import pandas as pd
 
-from backend.config.settings import TRADING_DAYS  # annualisation factor (single source)
+from backend.config.settings import TRADING_DAYS  # annualisation factor
 
 logger = logging.getLogger(__name__)
 
-N_STATES = 3  # bull / bear / sideways
-MIN_OBS = 60  # minimum market observations to attempt an HMM fit
-VOL_WINDOW = 10  # rolling window for the volatility feature
+N_STATES = 3  # bull, bear, sideways
+MIN_OBS = 60  # minimum observations for an HMM fit
+VOL_WINDOW = 10  # rolling volatility window
 
-BAND_ANN = 0.05  # ±5%/yr band: |annualised state return| inside this = sideways
+BAND_ANN = 0.05  # annual return band treated as sideways
 
 
 class RegimeDetector:
@@ -45,19 +22,8 @@ class RegimeDetector:
     def __init__(self, n_states: int = N_STATES):
         self.n_states = n_states
 
-    # ------------------------------------------------------------------ #
-    # Public entry point
-    # ------------------------------------------------------------------ #
     def detect(self, master_data: dict, strict: bool = False) -> dict:
-        """Detect the market regime.
-
-        The heuristic fallback keeps the LIVE app robust when hmmlearn is missing
-        or the fit fails. For EXPERIMENTS that must be HMM, pass strict=True: the
-        method then returns an explicit invalid result (method='hmm_unavailable',
-        valid=False) instead of silently reporting heuristic numbers as if they
-        were HMM - two runs of "the same" system must not quietly evaluate
-        different algorithms.
-        """
+        """Detect the regime; strict mode reports HMM failures as unavailable."""
         if not master_data:
             return {"regime": "unknown", "confidence": 0, "method": "none", "metrics": {}}
 
@@ -81,13 +47,9 @@ class RegimeDetector:
             }
         return self._heuristic_detect(master_data)
 
-    # ------------------------------------------------------------------ #
-    # Primary path: Gaussian HMM on market return + volatility
-    # ------------------------------------------------------------------ #
+    # Gaussian HMM estimation.
     def _market_features(self, master_data: dict):
-        """Build the market's [return, rolling-vol] feature matrix from the mean
-        close across the universe. Returns (feats ndarray, aligned index) or
-        (None, None) if a time series cannot be formed."""
+        """Build return and rolling-volatility features from the universe's mean close."""
         closes = {}
         for ticker, df in master_data.items():
             if df is None or getattr(df, "empty", True) or "close" not in df.columns:
@@ -102,7 +64,7 @@ class RegimeDetector:
         if not closes:
             return None, None
 
-        mkt = pd.DataFrame(closes).mean(axis=1).sort_index()  # equal-weight market index
+        mkt = pd.DataFrame(closes).mean(axis=1).sort_index()  # mean-price market proxy
         ret = mkt.pct_change()
         vol = ret.rolling(VOL_WINDOW).std()
         feat_df = pd.DataFrame({"ret": ret, "vol": vol}).dropna()
@@ -111,20 +73,15 @@ class RegimeDetector:
         return feat_df.values.astype(float), feat_df.index
 
     def _hmm_detect(self, feats: np.ndarray):
-        """Fit a GaussianHMM, label states by mean return, and read off the regime
-        for the latest observation. Returns None on any failure so the caller can
-        fall back to the heuristic."""
+        """Fit an HMM and classify recent posterior-weighted return, or return None on failure."""
         try:
             from hmmlearn.hmm import GaussianHMM
-        except Exception as exc:  # library not installed
+        except Exception as exc:  # hmmlearn not installed
             logger.warning(f"hmmlearn unavailable ({exc})")
             return None
 
         try:
-            # Standardise features before fitting: return (~1e-2) and rolling vol
-            # sit on similar-but-not-equal scales, and on raw values the EM fit
-            # routinely fails to converge and collapses to two states (verified).
-            # Standardising makes the fit converge and separate three states.
+            # Standardise return and volatility features before fitting the HMM.
             mu, sigma = feats.mean(axis=0), feats.std(axis=0) + 1e-9
             feats_z = (feats - mu) / sigma
 
@@ -133,12 +90,7 @@ class RegimeDetector:
             states = model.predict(feats_z)
             posteriors = model.predict_proba(feats_z)
 
-            # Label each latent state by its ABSOLUTE annualised mean return, not
-            # by rank. Ranking is wrong on a single-regime market: a pure bear
-            # market still has a "least-negative" state that a rank rule would call
-            # bull. Anchoring to an absolute band (±BAND_ANN per year) means an
-            # all-down market's states are all labelled bear, an all-up market's
-            # all bull, and a switching market's states split correctly.
+            # Label states by absolute annual-return bands rather than relative state rank.
             mean_ret_daily = np.array(
                 [feats[states == s, 0].mean() if np.any(states == s) else 0.0 for s in range(self.n_states)]
             )
@@ -149,22 +101,17 @@ class RegimeDetector:
 
             label_for = {s: _label(ann_ret[s]) for s in range(self.n_states)}
 
-            # "Current" regime over the recent window (~2 months). Reading a single
-            # sub-state is fragile - a bear market has bounce days the HMM isolates
-            # as a positive sub-state, and the last weeks can sit there. Instead take
-            # the POSTERIOR-WEIGHTED expected annualised return across states over the
-            # window and band-classify that: it aggregates the whole recent mixture,
-            # so a mostly-down window reads bear even with an occasional bounce state.
+            # Classify the recent window's posterior-weighted annual return.
             k = min(len(states), 42)
-            post_share = posteriors[-k:].mean(axis=0)  # avg posterior per state (sums to 1)
+            post_share = posteriors[-k:].mean(axis=0)  # mean posterior per state
             recent_exp_ann = float(np.dot(post_share, ann_ret))
             regime = _label(recent_exp_ann)
             current_state = int(np.argmax(post_share))
-            # confidence = share of recent posterior mass in states carrying the label
+            # Confidence is the recent posterior mass in states with the label.
             conf_mass = sum(float(post_share[s]) for s in range(self.n_states) if label_for[s] == regime)
             confidence = int(round(conf_mass * 100))
 
-            # occupancy aggregated by regime label (states can share a label)
+            # Occupancy aggregated by regime label.
             occ = {}
             for s in range(self.n_states):
                 occ[label_for[s]] = round(occ.get(label_for[s], 0.0) + float(np.mean(states == s)), 3)
@@ -180,13 +127,11 @@ class RegimeDetector:
             }
             logger.info(f"Regime[HMM]: {regime} ({confidence}%)  converged={metrics['converged']}  occ={occ}")
             return {"regime": regime, "confidence": confidence, "method": "hmm", "metrics": metrics}
-        except Exception as exc:  # non-convergence, singular cov, etc.
+        except Exception as exc:  # non-convergence or singular covariance
             logger.warning(f"HMM regime fit failed ({exc})")
             return None
 
-    # ------------------------------------------------------------------ #
-    # Fallback path: cross-sectional heuristic (breadth + ADX + momentum)
-    # ------------------------------------------------------------------ #
+    # Breadth and momentum fallback.
     def _heuristic_detect(self, master_data: dict) -> dict:
         breadth_scores, adx_scores, momentum_scores, rsi_scores = [], [], [], []
 
@@ -215,8 +160,7 @@ class RegimeDetector:
         avg_momentum = float(np.mean(momentum_scores)) if momentum_scores else 0.0
         avg_rsi = float(np.mean(rsi_scores)) if rsi_scores else 50.0
 
-        # Trend strength (ADX) gates a directional call: a market is only labelled
-        # bull/bear when it is actually trending (ADX >= 22), else sideways.
+        # Require sufficient ADX trend strength for a directional regime label.
         trending = avg_adx >= 22.0
 
         if trending and pct_above_sma200 > 0.60 and avg_momentum > 0 and avg_rsi > 50:

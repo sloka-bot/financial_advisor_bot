@@ -24,7 +24,7 @@ def test_unconfigured_avatar_keeps_chat_available(monkeypatch):
     assert response.headers["cache-control"] == "no-store"
 
 
-def test_avatar_uses_restricted_mode_and_never_returns_key(monkeypatch):
+def test_avatar_uses_restricted_mode_and_hides_key(monkeypatch):
     configure(monkeypatch)
 
     def create(url, **kwargs):
@@ -36,6 +36,8 @@ def test_avatar_uses_restricted_mode_and_never_returns_key(monkeypatch):
         assert kwargs["headers"]["X-API-KEY"] == "test-secret"
 
         class Response:
+            status_code = 200
+
             def raise_for_status(self):
                 pass
 
@@ -64,6 +66,8 @@ def test_avatar_rejects_malformed_token_response(monkeypatch):
     configure(monkeypatch)
 
     class Response:
+        status_code = 200
+
         def raise_for_status(self):
             pass
 

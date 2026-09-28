@@ -7,7 +7,7 @@ from backend.data.contracts import executable_price, freshness
 
 
 def value_saved_portfolio(profile, fusion):
-    """Value the user's saved holdings; proposals never become owned positions."""
+    """Value the user's saved holdings; proposals are excluded."""
     import numpy as np
 
     from backend.portfolio.markowitz import MarkowitzOptimizer

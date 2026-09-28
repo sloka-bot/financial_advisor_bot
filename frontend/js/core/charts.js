@@ -1,8 +1,4 @@
-/*
- * Shared Chart.js configuration and charts used by the workspace.
- * All chart functions live here so the page modules stay free of Chart.js boilerplate.
- * Each function accepts only the data it needs and returns the Chart instance.
- */
+/* Shared Chart.js configuration and workspace charts. */
 
 if (typeof Chart !== "undefined") {
   Chart.defaults.color = "#b2c3d9";
@@ -12,7 +8,7 @@ if (typeof Chart !== "undefined") {
   Chart.defaults.font.size = 11;
 }
 
-/* colour palette - aligned with CSS design tokens */
+/* Colour palette matching the CSS design tokens */
 const C = {
   green: "#73dcc8",
   red: "#F43F5E",
@@ -27,8 +23,8 @@ const C = {
   tooltip: "#0B1220",
 };
 
-/* destroy any existing chart on a canvas before drawing a new one */
-function safeChart(id, config) {
+/* Replace any existing chart on the canvas. */
+function drawChart(id, config) {
   if (typeof Chart === "undefined") return null;
   const ex = Chart.getChart(id);
   if (ex) ex.destroy();
@@ -37,7 +33,7 @@ function safeChart(id, config) {
   return new Chart(ctx, config);
 }
 
-/* shared tooltip style applied to every chart */
+/* Shared tooltip style */
 const TOOLTIP = {
   backgroundColor: C.tooltip,
   borderColor: "rgba(255,255,255,0.10)",
@@ -46,7 +42,7 @@ const TOOLTIP = {
   cornerRadius: 8,
 };
 
-/* shared axis style for dark theme */
+/* Shared dark-theme axis style */
 function darkAxis(overrides = {}) {
   return {
     grid: { color: C.grid },
@@ -55,7 +51,7 @@ function darkAxis(overrides = {}) {
   };
 }
 
-/* - Portfolio growth line chart - */
+/* Portfolio growth line chart */
 function allocationChart(id, labels, values) {
   const palette = [
     C.green,
@@ -69,7 +65,7 @@ function allocationChart(id, labels, values) {
     "#F97316",
     "#8B5CF6",
   ];
-  return safeChart(id, {
+  return drawChart(id, {
     type: "doughnut",
     data: {
       labels,
@@ -103,9 +99,9 @@ function allocationChart(id, labels, values) {
   });
 }
 
-/* - Horizontal bar chart for top performers - */
+/* Top performers bar chart */
 function compoundChart(id, labels, flat, compounded) {
-  return safeChart(id, {
+  return drawChart(id, {
     type: "line",
     data: {
       labels,
@@ -164,9 +160,9 @@ function compoundChart(id, labels, flat, compounded) {
   });
 }
 
-/* - Monte Carlo fan chart - */
+/* Monte Carlo fan chart */
 function monteCarloChart(id, labels, pcts) {
-  return safeChart(id, {
+  return drawChart(id, {
     type: "line",
     data: {
       labels,
@@ -234,9 +230,9 @@ function monteCarloChart(id, labels, pcts) {
   });
 }
 
-/* - Monte Carlo outcome histogram - */
+/* Monte Carlo outcome histogram */
 function histogramChart(id, buckets, counts) {
-  return safeChart(id, {
+  return drawChart(id, {
     type: "bar",
     data: {
       labels: buckets.map((b) => "$" + (b / 1000).toFixed(0) + "k"),
@@ -272,9 +268,9 @@ function histogramChart(id, buckets, counts) {
   });
 }
 
-/* - Price chart with SMA overlay (Analysis page) - */
+/* Price chart with SMA overlay */
 function efficientFrontierChart(id, points, optimal) {
-  return safeChart(id, {
+  return drawChart(id, {
     type: "scatter",
     data: {
       datasets: [
@@ -351,8 +347,8 @@ function efficientFrontierChart(id, points, optimal) {
   });
 }
 
-/* - Backtest equity curves (Tools page) - */
-/* --- Technical-indicator charts (Close+SMA+Bollinger, RSI, MACD, Volume) --- */
+/* Backtest equity curves */
+/* Technical-indicator charts */
 function priceChart(id, labels, closes, sma20, sma50, bbUpper, bbLower) {
   const datasets = [
     { label: "Close", data: closes, borderColor: "#F1F5F9", borderWidth: 1.5, pointRadius: 0, tension: 0.1, fill: false, order: 1 },
@@ -363,7 +359,7 @@ function priceChart(id, labels, closes, sma20, sma50, bbUpper, bbLower) {
     datasets.push({ label: "BB Upper", data: bbUpper, borderColor: "rgba(255,255,255,0.18)", borderWidth: 0.8, borderDash: [2, 3], pointRadius: 0, fill: false, tension: 0.2, order: 4 });
     datasets.push({ label: "BB Lower", data: bbLower, borderColor: "rgba(255,255,255,0.18)", borderWidth: 0.8, borderDash: [2, 3], pointRadius: 0, fill: { target: "-1", above: "rgba(255,255,255,0.02)" }, tension: 0.2, order: 5 });
   }
-  return safeChart(id, {
+  return drawChart(id, {
     type: "line",
     data: { labels, datasets },
     options: {
@@ -384,7 +380,7 @@ function priceChart(id, labels, closes, sma20, sma50, bbUpper, bbLower) {
 function rsiChart(id, labels, rsiValues) {
   const overbought = Array(labels.length).fill(70);
   const oversold = Array(labels.length).fill(30);
-  return safeChart(id, {
+  return drawChart(id, {
     type: "line",
     data: { labels, datasets: [
       { label: "RSI 14", data: rsiValues, borderColor: C.teal, borderWidth: 1.5, pointRadius: 0, tension: 0.2, fill: false },
@@ -400,7 +396,7 @@ function rsiChart(id, labels, rsiValues) {
 }
 
 function macdChart(id, labels, macd, signal, hist) {
-  return safeChart(id, {
+  return drawChart(id, {
     type: "bar",
     data: { labels, datasets: [
       { type: "bar", label: "Histogram", data: hist, backgroundColor: hist.map((v) => (v >= 0 ? "rgba(0,200,150,0.5)" : "rgba(244,63,94,0.5)")), borderColor: hist.map((v) => (v >= 0 ? C.green : C.red)), borderWidth: 1, order: 3 },
@@ -417,7 +413,7 @@ function macdChart(id, labels, macd, signal, hist) {
 
 function volumeChart(id, labels, volumes, volRatios) {
   const colours = volRatios ? volRatios.map((r) => (r > 1.5 ? "rgba(0,200,150,0.5)" : "rgba(71,85,105,0.5)")) : Array(volumes.length).fill("rgba(71,85,105,0.5)");
-  return safeChart(id, {
+  return drawChart(id, {
     type: "bar",
     data: { labels, datasets: [{ label: "Volume", data: volumes, backgroundColor: colours, borderRadius: 2, borderWidth: 0 }] },
     options: {

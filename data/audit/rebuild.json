@@ -1,0 +1,5484 @@
+{
+  "started_at": "2026-09-23T18:00:23.529969",
+  "start": "2010-01-01",
+  "end": "2026-09-23",
+  "requested": [
+    "A",
+    "AABA",
+    "AAL",
+    "AAP",
+    "AAPL",
+    "ABBV",
+    "ABC",
+    "ABMD",
+    "ABNB",
+    "ABT",
+    "ACGL",
+    "ACN",
+    "ACS",
+    "ADBE",
+    "ADI",
+    "ADM",
+    "ADP",
+    "ADS",
+    "ADSK",
+    "ADT",
+    "AEE",
+    "AEP",
+    "AES",
+    "AET",
+    "AFL",
+    "AGN",
+    "AIG",
+    "AIV",
+    "AIZ",
+    "AJG",
+    "AKAM",
+    "AKS",
+    "ALB",
+    "ALGN",
+    "ALK",
+    "ALL",
+    "ALLE",
+    "ALTR",
+    "ALXN",
+    "AMAT",
+    "AMCR",
+    "AMD",
+    "AME",
+    "AMG",
+    "AMGN",
+    "AMP",
+    "AMT",
+    "AMTM",
+    "AMZN",
+    "AN",
+    "ANDV",
+    "ANET",
+    "ANF",
+    "ANRZQ",
+    "ANSS",
+    "ANTM",
+    "AON",
+    "AOS",
+    "APA",
+    "APC",
+    "APD",
+    "APH",
+    "APO",
+    "APOL",
+    "APP",
+    "APTV",
+    "ARE",
+    "ARES",
+    "ARG",
+    "ARNC",
+    "ATGE",
+    "ATI",
+    "ATO",
+    "ATVI",
+    "AVB",
+    "AVGO",
+    "AVP",
+    "AVY",
+    "AWK",
+    "AXON",
+    "AXP",
+    "AYE",
+    "AYI",
+    "AZO",
+    "BA",
+    "BAC",
+    "BALL",
+    "BAX",
+    "BBBY",
+    "BBT",
+    "BBWI",
+    "BBY",
+    "BCR",
+    "BDK",
+    "BDX",
+    "BEAM",
+    "BEN",
+    "BF-B",
+    "BG",
+    "BHF",
+    "BHGE",
+    "BIG",
+    "BIIB",
+    "BIO",
+    "BJS",
+    "BK",
+    "BKNG",
+    "BKR",
+    "BLDR",
+    "BLK",
+    "BLL",
+    "BMC",
+    "BMS",
+    "BMY",
+    "BNI",
+    "BNY",
+    "BR",
+    "BRCM",
+    "BRK-B",
+    "BRO",
+    "BSX",
+    "BTUUQ",
+    "BWA",
+    "BX",
+    "BXLT",
+    "BXP",
+    "C",
+    "CA",
+    "CAG",
+    "CAH",
+    "CAM",
+    "CARR",
+    "CASY",
+    "CAT",
+    "CB",
+    "CBE",
+    "CBOE",
+    "CBRE",
+    "CBS",
+    "CCE",
+    "CCEP",
+    "CCI",
+    "CCL",
+    "CDAY",
+    "CDNS",
+    "CDW",
+    "CE",
+    "CEG",
+    "CELG",
+    "CEPH",
+    "CERN",
+    "CF",
+    "CFG",
+    "CFN",
+    "CHD",
+    "CHK",
+    "CHRW",
+    "CHTR",
+    "CI",
+    "CIEN",
+    "CINF",
+    "CL",
+    "CLF",
+    "CLX",
+    "CMA",
+    "CMCSA",
+    "CMCSK",
+    "CME",
+    "CMG",
+    "CMI",
+    "CMS",
+    "CNC",
+    "CNP",
+    "CNX",
+    "COF",
+    "COG",
+    "COHR",
+    "COIN",
+    "COL",
+    "COO",
+    "COP",
+    "COR",
+    "COST",
+    "COTY",
+    "COV",
+    "CPAY",
+    "CPB",
+    "CPGX",
+    "CPRI",
+    "CPRT",
+    "CPT",
+    "CPWR",
+    "CRH",
+    "CRL",
+    "CRM",
+    "CRWD",
+    "CSCO",
+    "CSGP",
+    "CSRA",
+    "CSX",
+    "CTAS",
+    "CTL",
+    "CTLT",
+    "CTRA",
+    "CTSH",
+    "CTVA",
+    "CTXS",
+    "CVC",
+    "CVH",
+    "CVNA",
+    "CVS",
+    "CVX",
+    "CXO",
+    "CZR",
+    "D",
+    "DAL",
+    "DASH",
+    "DAY",
+    "DD",
+    "DDOG",
+    "DE",
+    "DECK",
+    "DELL",
+    "DF",
+    "DFS",
+    "DG",
+    "DGX",
+    "DHI",
+    "DHR",
+    "DIS",
+    "DISCA",
+    "DISCK",
+    "DISH",
+    "DLR",
+    "DLTR",
+    "DNB",
+    "DNR",
+    "DO",
+    "DOC",
+    "DOV",
+    "DOW",
+    "DPZ",
+    "DRE",
+    "DRI",
+    "DTE",
+    "DTV",
+    "DUK",
+    "DVA",
+    "DVN",
+    "DWDP",
+    "DXC",
+    "DXCM",
+    "EA",
+    "EBAY",
+    "ECHO",
+    "ECL",
+    "ED",
+    "EFX",
+    "EG",
+    "EIX",
+    "EKDKQ",
+    "EL",
+    "ELV",
+    "EMC",
+    "EME",
+    "EMN",
+    "EMR",
+    "ENDP",
+    "ENPH",
+    "EOG",
+    "EP",
+    "EPAM",
+    "EQIX",
+    "EQR",
+    "EQT",
+    "ERIE",
+    "ES",
+    "ESRX",
+    "ESS",
+    "ESV",
+    "ETFC",
+    "ETN",
+    "ETR",
+    "ETSY",
+    "EVHC",
+    "EVRG",
+    "EW",
+    "EXC",
+    "EXE",
+    "EXPD",
+    "EXPE",
+    "EXR",
+    "F",
+    "FANG",
+    "FAST",
+    "FB",
+    "FBHS",
+    "FCPT",
+    "FCX",
+    "FDO",
+    "FDS",
+    "FDX",
+    "FDXF",
+    "FE",
+    "FERG",
+    "FFIV",
+    "FHN",
+    "FI",
+    "FICO",
+    "FII",
+    "FIS",
+    "FISV",
+    "FITB",
+    "FIX",
+    "FL",
+    "FLEX",
+    "FLIR",
+    "FLR",
+    "FLS",
+    "FLT",
+    "FMC",
+    "FOSL",
+    "FOX",
+    "FOXA",
+    "FRC",
+    "FRT",
+    "FRX",
+    "FSLR",
+    "FTI",
+    "FTNT",
+    "FTR",
+    "FTV",
+    "GAS",
+    "GD",
+    "GDDY",
+    "GE",
+    "GEHC",
+    "GEN",
+    "GENZ",
+    "GEV",
+    "GGP",
+    "GHC",
+    "GILD",
+    "GIS",
+    "GL",
+    "GLW",
+    "GM",
+    "GMCR",
+    "GME",
+    "GNRC",
+    "GNW",
+    "GOOG",
+    "GOOGL",
+    "GPC",
+    "GPN",
+    "GPS",
+    "GR",
+    "GRMN",
+    "GS",
+    "GT",
+    "GWW",
+    "HAL",
+    "HAR",
+    "HAS",
+    "HBAN",
+    "HBI",
+    "HCA",
+    "HCBK",
+    "HCP",
+    "HD",
+    "HES",
+    "HFC",
+    "HIG",
+    "HII",
+    "HLT",
+    "HNZ",
+    "HOG",
+    "HOLX",
+    "HON",
+    "HONA",
+    "HOOD",
+    "HOT",
+    "HP",
+    "HPE",
+    "HPQ",
+    "HRB",
+    "HRL",
+    "HRS",
+    "HSH",
+    "HSIC",
+    "HSP",
+    "HST",
+    "HSY",
+    "HUBB",
+    "HUM",
+    "HWM",
+    "IBKR",
+    "IBM",
+    "ICE",
+    "IDXX",
+    "IEX",
+    "IFF",
+    "IGT",
+    "ILMN",
+    "INCY",
+    "INFO",
+    "INTC",
+    "INTU",
+    "INVH",
+    "IP",
+    "IPG",
+    "IPGP",
+    "IQV",
+    "IR",
+    "IRM",
+    "ISRG",
+    "IT",
+    "ITT",
+    "ITW",
+    "IVZ",
+    "J",
+    "JAVA",
+    "JBHT",
+    "JBL",
+    "JCI",
+    "JCP",
+    "JEC",
+    "JEF",
+    "JKHY",
+    "JNJ",
+    "JNPR",
+    "JNS",
+    "JOY",
+    "JPM",
+    "JWN",
+    "K",
+    "KDP",
+    "KEY",
+    "KEYS",
+    "KG",
+    "KHC",
+    "KIM",
+    "KKR",
+    "KLAC",
+    "KMB",
+    "KMI",
+    "KMX",
+    "KO",
+    "KORS",
+    "KR",
+    "KRFT",
+    "KSS",
+    "KSU",
+    "KVUE",
+    "L",
+    "LB",
+    "LDOS",
+    "LEG",
+    "LEN",
+    "LH",
+    "LHX",
+    "LIFE",
+    "LII",
+    "LIN",
+    "LITE",
+    "LKQ",
+    "LLL",
+    "LLTC",
+    "LLY",
+    "LM",
+    "LMT",
+    "LNC",
+    "LNT",
+    "LO",
+    "LOW",
+    "LRCX",
+    "LSI",
+    "LULU",
+    "LUMN",
+    "LUV",
+    "LVLT",
+    "LVS",
+    "LW",
+    "LXK",
+    "LYB",
+    "LYV",
+    "M",
+    "MA",
+    "MAA",
+    "MAC",
+    "MAR",
+    "MAS",
+    "MAT",
+    "MCD",
+    "MCHP",
+    "MCK",
+    "MCO",
+    "MDLZ",
+    "MDP",
+    "MDT",
+    "MEE",
+    "MET",
+    "META",
+    "MFE",
+    "MGM",
+    "MHK",
+    "MHS",
+    "MI",
+    "MIL",
+    "MJN",
+    "MKC",
+    "MKTX",
+    "MLM",
+    "MMC",
+    "MMI",
+    "MMM",
+    "MNK",
+    "MNST",
+    "MO",
+    "MOH",
+    "MOLX",
+    "MON",
+    "MOS",
+    "MPC",
+    "MPWR",
+    "MRK",
+    "MRNA",
+    "MRO",
+    "MRSH",
+    "MRVL",
+    "MS",
+    "MSCI",
+    "MSFT",
+    "MSI",
+    "MTB",
+    "MTCH",
+    "MTD",
+    "MU",
+    "MUR",
+    "MWV",
+    "MWW",
+    "MXIM",
+    "MYL",
+    "NAVI",
+    "NBL",
+    "NBR",
+    "NCLH",
+    "NDAQ",
+    "NDSN",
+    "NE",
+    "NEE",
+    "NEM",
+    "NFLX",
+    "NFX",
+    "NI",
+    "NKE",
+    "NKTR",
+    "NLOK",
+    "NLSN",
+    "NOC",
+    "NOV",
+    "NOVL",
+    "NOW",
+    "NRG",
+    "NSC",
+    "NSM",
+    "NTAP",
+    "NTRS",
+    "NUE",
+    "NVDA",
+    "NVLS",
+    "NVR",
+    "NWL",
+    "NWS",
+    "NWSA",
+    "NXPI",
+    "NYT",
+    "NYX",
+    "O",
+    "ODFL",
+    "ODP",
+    "OGN",
+    "OI",
+    "OKE",
+    "OMC",
+    "ON",
+    "ORCL",
+    "ORLY",
+    "OTIS",
+    "OXY",
+    "PANW",
+    "PARA",
+    "PAYC",
+    "PAYX",
+    "PBCT",
+    "PBG",
+    "PBI",
+    "PCAR",
+    "PCG",
+    "PCL",
+    "PCP",
+    "PDCO",
+    "PEAK",
+    "PEG",
+    "PENN",
+    "PEP",
+    "PETM",
+    "PFE",
+    "PFG",
+    "PG",
+    "PGN",
+    "PGR",
+    "PH",
+    "PHM",
+    "PKG",
+    "PKI",
+    "PLD",
+    "PLL",
+    "PLTR",
+    "PM",
+    "PNC",
+    "PNR",
+    "PNW",
+    "PODD",
+    "POM",
+    "POOL",
+    "PPG",
+    "PPL",
+    "PRGO",
+    "PRU",
+    "PSA",
+    "PSKY",
+    "PSX",
+    "PTC",
+    "PTV",
+    "PVH",
+    "PWR",
+    "PX",
+    "PXD",
+    "PYPL",
+    "Q",
+    "QCOM",
+    "QEP",
+    "QLGC",
+    "QRVO",
+    "R",
+    "RAI",
+    "RCL",
+    "RDC",
+    "RDDT",
+    "RE",
+    "REG",
+    "REGN",
+    "RF",
+    "RHI",
+    "RHT",
+    "RIG",
+    "RJF",
+    "RL",
+    "RMD",
+    "ROK",
+    "ROL",
+    "ROP",
+    "ROST",
+    "RRC",
+    "RRD",
+    "RSG",
+    "RSHCQ",
+    "RTN",
+    "RTX",
+    "RVTY",
+    "RX",
+    "S",
+    "SATS",
+    "SBAC",
+    "SBNY",
+    "SBUX",
+    "SCG",
+    "SCHW",
+    "SE",
+    "SEDG",
+    "SEE",
+    "SHLD",
+    "SHW",
+    "SIAL",
+    "SIG",
+    "SII",
+    "SIVB",
+    "SJM",
+    "SLB",
+    "SLG",
+    "SLM",
+    "SMCI",
+    "SNA",
+    "SNDK",
+    "SNI",
+    "SNPS",
+    "SO",
+    "SOLS",
+    "SOLV",
+    "SPG",
+    "SPGI",
+    "SPLS",
+    "SRCL",
+    "SRE",
+    "STE",
+    "STI",
+    "STJ",
+    "STLD",
+    "STR",
+    "STT",
+    "STX",
+    "STZ",
+    "SUN",
+    "SUNEQ",
+    "SVU",
+    "SW",
+    "SWK",
+    "SWKS",
+    "SWN",
+    "SWY",
+    "SYF",
+    "SYK",
+    "SYMC",
+    "SYY",
+    "T",
+    "TAP",
+    "TDC",
+    "TDG",
+    "TDY",
+    "TE",
+    "TECH",
+    "TEG",
+    "TEL",
+    "TER",
+    "TFC",
+    "TFX",
+    "TGNA",
+    "TGT",
+    "THC",
+    "TIE",
+    "TIF",
+    "TJX",
+    "TKO",
+    "TLAB",
+    "TMK",
+    "TMO",
+    "TMUS",
+    "TPL",
+    "TPR",
+    "TRGP",
+    "TRIP",
+    "TRMB",
+    "TROW",
+    "TRV",
+    "TSCO",
+    "TSLA",
+    "TSN",
+    "TSS",
+    "TT",
+    "TTD",
+    "TTWO",
+    "TWC",
+    "TWTR",
+    "TWX",
+    "TXN",
+    "TXT",
+    "TYL",
+    "UA",
+    "UAA",
+    "UAL",
+    "UBER",
+    "UDR",
+    "UHS",
+    "ULTA",
+    "UNH",
+    "UNM",
+    "UNP",
+    "UPS",
+    "URBN",
+    "URI",
+    "USB",
+    "UTX",
+    "V",
+    "VAR",
+    "VEEV",
+    "VFC",
+    "VIAB",
+    "VIAC",
+    "VIAV",
+    "VICI",
+    "VLO",
+    "VLTO",
+    "VMC",
+    "VMRK",
+    "VNO",
+    "VNT",
+    "VRSK",
+    "VRSN",
+    "VRT",
+    "VRTX",
+    "VST",
+    "VTR",
+    "VTRS",
+    "VZ",
+    "WAB",
+    "WAT",
+    "WBA",
+    "WBD",
+    "WCG",
+    "WDAY",
+    "WDC",
+    "WEC",
+    "WELL",
+    "WFC",
+    "WFM",
+    "WHR",
+    "WIN",
+    "WLTW",
+    "WM",
+    "WMB",
+    "WMT",
+    "WPX",
+    "WRB",
+    "WRK",
+    "WSM",
+    "WST",
+    "WTW",
+    "WU",
+    "WY",
+    "WYND",
+    "WYNN",
+    "X",
+    "XEC",
+    "XEL",
+    "XL",
+    "XLNX",
+    "XOM",
+    "XRAY",
+    "XRX",
+    "XTO",
+    "XYL",
+    "XYZ",
+    "YUM",
+    "ZBH",
+    "ZBRA",
+    "ZION",
+    "ZTS"
+  ],
+  "smoke_test": false,
+  "success": {
+    "A": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AAL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AAP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AAPL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ABBV": {
+      "rows": 3252,
+      "first": "2013-10-16",
+      "last": "2026-09-22",
+      "execution_prices": 3252,
+      "news_sessions": 0
+    },
+    "ABNB": {
+      "rows": 1252,
+      "first": "2021-09-27",
+      "last": "2026-09-22",
+      "execution_prices": 1252,
+      "news_sessions": 0
+    },
+    "ABT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ACGL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ACN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ADBE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ADI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ADM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ADP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ADSK": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ADT": {
+      "rows": 1981,
+      "first": "2018-11-01",
+      "last": "2026-09-22",
+      "execution_prices": 1981,
+      "news_sessions": 0
+    },
+    "AEE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AEP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AES": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AFL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AIG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AIV": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AIZ": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AJG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AKAM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ALB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ALGN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ALK": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ALL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ALLE": {
+      "rows": 3030,
+      "first": "2014-09-04",
+      "last": "2026-09-22",
+      "execution_prices": 3030,
+      "news_sessions": 0
+    },
+    "AMAT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AMCR": {
+      "rows": 3410,
+      "first": "2013-03-04",
+      "last": "2026-09-22",
+      "execution_prices": 3410,
+      "news_sessions": 0
+    },
+    "AMD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AME": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AMG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AMGN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AMP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AMT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AMTM": {
+      "rows": 301,
+      "first": "2025-07-14",
+      "last": "2026-09-22",
+      "execution_prices": 301,
+      "news_sessions": 0
+    },
+    "AMZN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ANET": {
+      "rows": 2893,
+      "first": "2015-03-23",
+      "last": "2026-09-22",
+      "execution_prices": 2893,
+      "news_sessions": 0
+    },
+    "ANF": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AON": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AOS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "APA": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "APD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "APH": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "APO": {
+      "rows": 3694,
+      "first": "2012-01-12",
+      "last": "2026-09-22",
+      "execution_prices": 3694,
+      "news_sessions": 0
+    },
+    "APP": {
+      "rows": 1167,
+      "first": "2022-01-27",
+      "last": "2026-09-22",
+      "execution_prices": 1167,
+      "news_sessions": 0
+    },
+    "APTV": {
+      "rows": 3532,
+      "first": "2012-09-04",
+      "last": "2026-09-22",
+      "execution_prices": 3532,
+      "news_sessions": 0
+    },
+    "ARE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ARES": {
+      "rows": 2917,
+      "first": "2015-02-17",
+      "last": "2026-09-22",
+      "execution_prices": 2917,
+      "news_sessions": 0
+    },
+    "ATI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ATO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AVGO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AVY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AWK": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AXON": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AXP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AYI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "AZO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BA": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BAC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BALL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BAX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BBT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BBWI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BBY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BDX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BEAM": {
+      "rows": 1466,
+      "first": "2020-11-18",
+      "last": "2026-09-22",
+      "execution_prices": 1466,
+      "news_sessions": 0
+    },
+    "BEN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BF-B": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BHF": {
+      "rows": 2110,
+      "first": "2018-05-01",
+      "last": "2026-09-22",
+      "execution_prices": 2110,
+      "news_sessions": 0
+    },
+    "BIIB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BIO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BKNG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BKR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BLDR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BLK": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BMY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BNY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BRK-B": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BRO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BSX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BWA": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "BXP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "C": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CAG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CAH": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CAM": {
+      "rows": 43,
+      "first": "2026-07-23",
+      "last": "2026-09-22",
+      "execution_prices": 43,
+      "news_sessions": 0
+    },
+    "CARR": {
+      "rows": 1437,
+      "first": "2020-12-31",
+      "last": "2026-09-22",
+      "execution_prices": 1437,
+      "news_sessions": 0
+    },
+    "CASY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CAT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CBOE": {
+      "rows": 3894,
+      "first": "2011-03-29",
+      "last": "2026-09-22",
+      "execution_prices": 3894,
+      "news_sessions": 0
+    },
+    "CBRE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CCEP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CCI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CCL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CDNS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CDW": {
+      "rows": 3130,
+      "first": "2014-04-11",
+      "last": "2026-09-22",
+      "execution_prices": 3130,
+      "news_sessions": 0
+    },
+    "CE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CEG": {
+      "rows": 974,
+      "first": "2022-11-02",
+      "last": "2026-09-22",
+      "execution_prices": 974,
+      "news_sessions": 0
+    },
+    "CF": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CFG": {
+      "rows": 2817,
+      "first": "2015-07-10",
+      "last": "2026-09-22",
+      "execution_prices": 2817,
+      "news_sessions": 0
+    },
+    "CHD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CHRW": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CHTR": {
+      "rows": 4005,
+      "first": "2010-10-19",
+      "last": "2026-09-22",
+      "execution_prices": 4005,
+      "news_sessions": 0
+    },
+    "CI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CIEN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CINF": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CLF": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CLX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CMCSA": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CME": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CMG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CMI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CMS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CNC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CNP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CNX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "COF": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "COHR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "COIN": {
+      "rows": 1168,
+      "first": "2022-01-26",
+      "last": "2026-09-22",
+      "execution_prices": 1168,
+      "news_sessions": 0
+    },
+    "COO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "COP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "COR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "COST": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "COTY": {
+      "rows": 3140,
+      "first": "2014-03-28",
+      "last": "2026-09-22",
+      "execution_prices": 3140,
+      "news_sessions": 0
+    },
+    "CPAY": {
+      "rows": 3766,
+      "first": "2011-09-29",
+      "last": "2026-09-22",
+      "execution_prices": 3766,
+      "news_sessions": 0
+    },
+    "CPB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CPRI": {
+      "rows": 3513,
+      "first": "2012-10-01",
+      "last": "2026-09-22",
+      "execution_prices": 3513,
+      "news_sessions": 0
+    },
+    "CPRT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CPT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CPWR": {
+      "rows": 4005,
+      "first": "2010-10-18",
+      "last": "2026-09-21",
+      "execution_prices": 4005,
+      "news_sessions": 0
+    },
+    "CRH": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CRL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CRM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CRWD": {
+      "rows": 1631,
+      "first": "2020-03-26",
+      "last": "2026-09-22",
+      "execution_prices": 1631,
+      "news_sessions": 0
+    },
+    "CSCO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CSGP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CSX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CTAS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CTSH": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CTVA": {
+      "rows": 1643,
+      "first": "2020-03-10",
+      "last": "2026-09-22",
+      "execution_prices": 1643,
+      "news_sessions": 0
+    },
+    "CVNA": {
+      "rows": 2164,
+      "first": "2018-02-12",
+      "last": "2026-09-22",
+      "execution_prices": 2164,
+      "news_sessions": 0
+    },
+    "CVS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CVX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "CZR": {
+      "rows": 2819,
+      "first": "2015-07-08",
+      "last": "2026-09-22",
+      "execution_prices": 2819,
+      "news_sessions": 0
+    },
+    "D": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DAL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DASH": {
+      "rows": 1253,
+      "first": "2021-09-24",
+      "last": "2026-09-22",
+      "execution_prices": 1253,
+      "news_sessions": 0
+    },
+    "DD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DDOG": {
+      "rows": 1562,
+      "first": "2020-07-06",
+      "last": "2026-09-22",
+      "execution_prices": 1562,
+      "news_sessions": 0
+    },
+    "DE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DECK": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DELL": {
+      "rows": 2339,
+      "first": "2017-06-02",
+      "last": "2026-09-22",
+      "execution_prices": 2339,
+      "news_sessions": 0
+    },
+    "DG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DGX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DHI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DHR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DIS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DLR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DLTR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DOC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DOV": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DOW": {
+      "rows": 1689,
+      "first": "2020-01-02",
+      "last": "2026-09-22",
+      "execution_prices": 1689,
+      "news_sessions": 0
+    },
+    "DPZ": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DRI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DTE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DUK": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DVA": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DVN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DXC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "DXCM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EBAY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ECHO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ECL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ED": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EFX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EIX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ELV": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EMC": {
+      "rows": 643,
+      "first": "2024-02-29",
+      "last": "2026-09-22",
+      "execution_prices": 643,
+      "news_sessions": 0
+    },
+    "EME": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EMN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EMR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ENPH": {
+      "rows": 3441,
+      "first": "2013-01-16",
+      "last": "2026-09-22",
+      "execution_prices": 3441,
+      "news_sessions": 0
+    },
+    "EOG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EPAM": {
+      "rows": 3477,
+      "first": "2012-11-23",
+      "last": "2026-09-22",
+      "execution_prices": 3477,
+      "news_sessions": 0
+    },
+    "EQIX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EQT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ERIE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ES": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ESS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ETN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ETR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ETSY": {
+      "rows": 2677,
+      "first": "2016-01-29",
+      "last": "2026-09-22",
+      "execution_prices": 2677,
+      "news_sessions": 0
+    },
+    "EVRG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EW": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EXC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EXE": {
+      "rows": 1211,
+      "first": "2021-11-23",
+      "last": "2026-09-22",
+      "execution_prices": 1211,
+      "news_sessions": 0
+    },
+    "EXPD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EXPE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "EXR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "F": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FANG": {
+      "rows": 3305,
+      "first": "2013-08-01",
+      "last": "2026-09-22",
+      "execution_prices": 3305,
+      "news_sessions": 0
+    },
+    "FAST": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FB": {
+      "rows": 113,
+      "first": "2026-04-13",
+      "last": "2026-09-22",
+      "execution_prices": 113,
+      "news_sessions": 0
+    },
+    "FCPT": {
+      "rows": 2532,
+      "first": "2016-08-25",
+      "last": "2026-09-22",
+      "execution_prices": 2532,
+      "news_sessions": 0
+    },
+    "FCX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FDS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FDX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FERG": {
+      "rows": 4005,
+      "first": "2010-10-19",
+      "last": "2026-09-22",
+      "execution_prices": 4005,
+      "news_sessions": 0
+    },
+    "FFIV": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FHN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FICO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FIS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FISV": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FITB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FIX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FLEX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FLR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FLS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FMC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FOSL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FOX": {
+      "rows": 1694,
+      "first": "2019-12-24",
+      "last": "2026-09-22",
+      "execution_prices": 1694,
+      "news_sessions": 0
+    },
+    "FOXA": {
+      "rows": 1695,
+      "first": "2019-12-23",
+      "last": "2026-09-22",
+      "execution_prices": 1695,
+      "news_sessions": 0
+    },
+    "FRT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FSLR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FTI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FTNT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "FTV": {
+      "rows": 2370,
+      "first": "2017-04-19",
+      "last": "2026-09-22",
+      "execution_prices": 2370,
+      "news_sessions": 0
+    },
+    "GD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GDDY": {
+      "rows": 2688,
+      "first": "2016-01-13",
+      "last": "2026-09-22",
+      "execution_prices": 2688,
+      "news_sessions": 0
+    },
+    "GE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GEHC": {
+      "rows": 745,
+      "first": "2023-10-03",
+      "last": "2026-09-22",
+      "execution_prices": 745,
+      "news_sessions": 0
+    },
+    "GEN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GENZ": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GEV": {
+      "rows": 425,
+      "first": "2025-01-13",
+      "last": "2026-09-22",
+      "execution_prices": 425,
+      "news_sessions": 0
+    },
+    "GHC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GILD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GIS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GLW": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GM": {
+      "rows": 3784,
+      "first": "2011-09-02",
+      "last": "2026-09-22",
+      "execution_prices": 3784,
+      "news_sessions": 0
+    },
+    "GME": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GNRC": {
+      "rows": 3979,
+      "first": "2010-11-24",
+      "last": "2026-09-22",
+      "execution_prices": 3979,
+      "news_sessions": 0
+    },
+    "GNW": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GOOG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GOOGL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GPC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GPN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GRMN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "GWW": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HAL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HAS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HBAN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HCA": {
+      "rows": 3708,
+      "first": "2011-12-21",
+      "last": "2026-09-22",
+      "execution_prices": 3708,
+      "news_sessions": 0
+    },
+    "HD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HIG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HII": {
+      "rows": 3700,
+      "first": "2012-01-04",
+      "last": "2026-09-22",
+      "execution_prices": 3700,
+      "news_sessions": 0
+    },
+    "HLT": {
+      "rows": 3013,
+      "first": "2014-09-29",
+      "last": "2026-09-22",
+      "execution_prices": 3013,
+      "news_sessions": 0
+    },
+    "HOG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HON": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HOOD": {
+      "rows": 1094,
+      "first": "2022-05-12",
+      "last": "2026-09-22",
+      "execution_prices": 1094,
+      "news_sessions": 0
+    },
+    "HP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HPE": {
+      "rows": 2548,
+      "first": "2016-08-03",
+      "last": "2026-09-22",
+      "execution_prices": 2548,
+      "news_sessions": 0
+    },
+    "HPQ": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HRB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HRL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HSIC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HST": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HSY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HUBB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HUM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "HWM": {
+      "rows": 2286,
+      "first": "2017-08-17",
+      "last": "2026-09-22",
+      "execution_prices": 2286,
+      "news_sessions": 0
+    },
+    "IBKR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "IBM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ICE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "IDXX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "IEX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "IFF": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ILMN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "INCY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "INFO": {
+      "rows": 289,
+      "first": "2025-07-30",
+      "last": "2026-09-22",
+      "execution_prices": 289,
+      "news_sessions": 0
+    },
+    "INTC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "INTU": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "INVH": {
+      "rows": 2224,
+      "first": "2017-11-14",
+      "last": "2026-09-22",
+      "execution_prices": 2224,
+      "news_sessions": 0
+    },
+    "IP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "IPGP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "IQV": {
+      "rows": 3164,
+      "first": "2014-02-24",
+      "last": "2026-09-22",
+      "execution_prices": 3164,
+      "news_sessions": 0
+    },
+    "IR": {
+      "rows": 2154,
+      "first": "2018-02-27",
+      "last": "2026-09-22",
+      "execution_prices": 2154,
+      "news_sessions": 0
+    },
+    "IRM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ISRG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "IT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ITT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ITW": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "IVZ": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "J": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "JAVA": {
+      "rows": 1047,
+      "first": "2022-07-21",
+      "last": "2026-09-22",
+      "execution_prices": 1047,
+      "news_sessions": 0
+    },
+    "JBHT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "JBL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "JCI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "JEF": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "JKHY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "JNJ": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "JPM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "KDP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "KEY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "KEYS": {
+      "rows": 2799,
+      "first": "2015-08-05",
+      "last": "2026-09-22",
+      "execution_prices": 2799,
+      "news_sessions": 0
+    },
+    "KG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "KHC": {
+      "rows": 2622,
+      "first": "2016-04-19",
+      "last": "2026-09-22",
+      "execution_prices": 2622,
+      "news_sessions": 0
+    },
+    "KIM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "KKR": {
+      "rows": 3873,
+      "first": "2011-04-28",
+      "last": "2026-09-22",
+      "execution_prices": 3873,
+      "news_sessions": 0
+    },
+    "KLAC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "KMB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "KMI": {
+      "rows": 3726,
+      "first": "2011-11-25",
+      "last": "2026-09-22",
+      "execution_prices": 3726,
+      "news_sessions": 0
+    },
+    "KMX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "KO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "KR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "KSS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "KVUE": {
+      "rows": 650,
+      "first": "2024-02-20",
+      "last": "2026-09-22",
+      "execution_prices": 650,
+      "news_sessions": 0
+    },
+    "L": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LB": {
+      "rows": 361,
+      "first": "2025-04-15",
+      "last": "2026-09-22",
+      "execution_prices": 361,
+      "news_sessions": 0
+    },
+    "LDOS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LEN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LH": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LHX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LII": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LIN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LITE": {
+      "rows": 2609,
+      "first": "2016-05-06",
+      "last": "2026-09-22",
+      "execution_prices": 2609,
+      "news_sessions": 0
+    },
+    "LKQ": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LLY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LMT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LNC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LNT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LOW": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LRCX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LULU": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LUMN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LUV": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LVS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "LW": {
+      "rows": 2279,
+      "first": "2017-08-28",
+      "last": "2026-09-22",
+      "execution_prices": 2279,
+      "news_sessions": 0
+    },
+    "LYB": {
+      "rows": 3927,
+      "first": "2011-02-09",
+      "last": "2026-09-22",
+      "execution_prices": 3927,
+      "news_sessions": 0
+    },
+    "LYV": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "M": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MA": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MAA": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MAC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MAR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MAS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MAT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MCD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MCHP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MCK": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MCO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MDLZ": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MDT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MET": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "META": {
+      "rows": 3407,
+      "first": "2013-03-07",
+      "last": "2026-09-22",
+      "execution_prices": 3407,
+      "news_sessions": 0
+    },
+    "MGM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MHK": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MI": {
+      "rows": 2521,
+      "first": "2016-09-12",
+      "last": "2026-09-22",
+      "execution_prices": 2521,
+      "news_sessions": 0
+    },
+    "MKC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MKTX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MLM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MMI": {
+      "rows": 3042,
+      "first": "2014-08-18",
+      "last": "2026-09-22",
+      "execution_prices": 3042,
+      "news_sessions": 0
+    },
+    "MMM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MNST": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MOH": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MOS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MPC": {
+      "rows": 3634,
+      "first": "2012-04-10",
+      "last": "2026-09-22",
+      "execution_prices": 3634,
+      "news_sessions": 0
+    },
+    "MPWR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MRK": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MRNA": {
+      "rows": 1758,
+      "first": "2019-09-24",
+      "last": "2026-09-22",
+      "execution_prices": 1758,
+      "news_sessions": 0
+    },
+    "MRSH": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MRVL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MSCI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MSFT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MSI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MTB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MTCH": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MTD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MU": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "MUR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NAVI": {
+      "rows": 2927,
+      "first": "2015-02-02",
+      "last": "2026-09-22",
+      "execution_prices": 2927,
+      "news_sessions": 0
+    },
+    "NBR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NCLH": {
+      "rows": 3240,
+      "first": "2013-11-01",
+      "last": "2026-09-22",
+      "execution_prices": 3240,
+      "news_sessions": 0
+    },
+    "NDAQ": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NDSN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NE": {
+      "rows": 1129,
+      "first": "2022-03-23",
+      "last": "2026-09-22",
+      "execution_prices": 1129,
+      "news_sessions": 0
+    },
+    "NEE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NEM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NFLX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NKE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NKTR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NOC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NOV": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NOW": {
+      "rows": 3378,
+      "first": "2013-04-18",
+      "last": "2026-09-22",
+      "execution_prices": 3378,
+      "news_sessions": 0
+    },
+    "NRG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NSC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NTAP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NTRS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NUE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NVDA": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NVR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NWL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "NWS": {
+      "rows": 3136,
+      "first": "2014-04-03",
+      "last": "2026-09-22",
+      "execution_prices": 3136,
+      "news_sessions": 0
+    },
+    "NWSA": {
+      "rows": 3136,
+      "first": "2014-04-03",
+      "last": "2026-09-22",
+      "execution_prices": 3136,
+      "news_sessions": 0
+    },
+    "NXPI": {
+      "rows": 3857,
+      "first": "2011-05-20",
+      "last": "2026-09-22",
+      "execution_prices": 3857,
+      "news_sessions": 0
+    },
+    "NYT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "O": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ODFL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "OGN": {
+      "rows": 1146,
+      "first": "2022-02-28",
+      "last": "2026-09-22",
+      "execution_prices": 1146,
+      "news_sessions": 0
+    },
+    "OI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "OKE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "OMC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ON": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ORCL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ORLY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "OTIS": {
+      "rows": 1437,
+      "first": "2020-12-31",
+      "last": "2026-09-22",
+      "execution_prices": 1437,
+      "news_sessions": 0
+    },
+    "OXY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PANW": {
+      "rows": 3364,
+      "first": "2013-05-08",
+      "last": "2026-09-22",
+      "execution_prices": 3364,
+      "news_sessions": 0
+    },
+    "PARA": {
+      "rows": 1209,
+      "first": "2021-11-26",
+      "last": "2026-09-22",
+      "execution_prices": 1209,
+      "news_sessions": 0
+    },
+    "PAYC": {
+      "rows": 2929,
+      "first": "2015-01-29",
+      "last": "2026-09-22",
+      "execution_prices": 2929,
+      "news_sessions": 0
+    },
+    "PAYX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PBI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PCAR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PCG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PCL": {
+      "rows": 85,
+      "first": "2026-05-20",
+      "last": "2026-09-21",
+      "execution_prices": 85,
+      "news_sessions": 0
+    },
+    "PEG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PENN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PEP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PFE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PFG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PGR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PH": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PHM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PKG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PLD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PLTR": {
+      "rows": 1302,
+      "first": "2021-07-16",
+      "last": "2026-09-22",
+      "execution_prices": 1302,
+      "news_sessions": 0
+    },
+    "PM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PNC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PNR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PNW": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PODD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "POM": {
+      "rows": 41,
+      "first": "2026-07-27",
+      "last": "2026-09-22",
+      "execution_prices": 41,
+      "news_sessions": 0
+    },
+    "POOL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PPG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PPL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PRGO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PRU": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PSA": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PSKY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PSX": {
+      "rows": 3433,
+      "first": "2013-01-29",
+      "last": "2026-09-22",
+      "execution_prices": 3433,
+      "news_sessions": 0
+    },
+    "PTC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PVH": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PWR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "PYPL": {
+      "rows": 2622,
+      "first": "2016-04-19",
+      "last": "2026-09-22",
+      "execution_prices": 2622,
+      "news_sessions": 0
+    },
+    "Q": {
+      "rows": 28,
+      "first": "2026-08-13",
+      "last": "2026-09-22",
+      "execution_prices": 28,
+      "news_sessions": 0
+    },
+    "QCOM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "QRVO": {
+      "rows": 2748,
+      "first": "2015-10-16",
+      "last": "2026-09-22",
+      "execution_prices": 2748,
+      "news_sessions": 0
+    },
+    "R": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "RCL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "RDDT": {
+      "rows": 429,
+      "first": "2025-01-06",
+      "last": "2026-09-22",
+      "execution_prices": 429,
+      "news_sessions": 0
+    },
+    "REG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "REGN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "RF": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "RHI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "RIG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "RJF": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "RL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "RMD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ROK": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ROL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ROP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ROST": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "RRC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "RSG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "RTX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "RVTY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "S": {
+      "rows": 1114,
+      "first": "2022-04-13",
+      "last": "2026-09-22",
+      "execution_prices": 1114,
+      "news_sessions": 0
+    },
+    "SBAC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SBNY": {
+      "rows": 327,
+      "first": "2025-06-03",
+      "last": "2026-09-21",
+      "execution_prices": 327,
+      "news_sessions": 0
+    },
+    "SBUX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SCHW": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SE": {
+      "rows": 2042,
+      "first": "2018-08-07",
+      "last": "2026-09-22",
+      "execution_prices": 2042,
+      "news_sessions": 0
+    },
+    "SEDG": {
+      "rows": 2691,
+      "first": "2016-01-08",
+      "last": "2026-09-22",
+      "execution_prices": 2691,
+      "news_sessions": 0
+    },
+    "SHLD": {
+      "rows": 559,
+      "first": "2024-07-01",
+      "last": "2026-09-22",
+      "execution_prices": 559,
+      "news_sessions": 0
+    },
+    "SHW": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SIG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SII": {
+      "rows": 3973,
+      "first": "2010-12-03",
+      "last": "2026-09-22",
+      "execution_prices": 3973,
+      "news_sessions": 0
+    },
+    "SJM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SLB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SLG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SLM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SMCI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SNA": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SNDK": {
+      "rows": 204,
+      "first": "2025-11-28",
+      "last": "2026-09-22",
+      "execution_prices": 204,
+      "news_sessions": 0
+    },
+    "SNPS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SOLS": {
+      "rows": 33,
+      "first": "2026-08-06",
+      "last": "2026-09-22",
+      "execution_prices": 33,
+      "news_sessions": 0
+    },
+    "SOLV": {
+      "rows": 426,
+      "first": "2025-01-10",
+      "last": "2026-09-22",
+      "execution_prices": 426,
+      "news_sessions": 0
+    },
+    "SPG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SPGI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SRE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "STE": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "STI": {
+      "rows": 903,
+      "first": "2023-02-15",
+      "last": "2026-09-22",
+      "execution_prices": 903,
+      "news_sessions": 0
+    },
+    "STLD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "STT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "STX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "STZ": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SUN": {
+      "rows": 3321,
+      "first": "2013-07-10",
+      "last": "2026-09-22",
+      "execution_prices": 3321,
+      "news_sessions": 0
+    },
+    "SW": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SWK": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SWKS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SYF": {
+      "rows": 2855,
+      "first": "2015-05-15",
+      "last": "2026-09-22",
+      "execution_prices": 2855,
+      "news_sessions": 0
+    },
+    "SYK": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "SYY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "T": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TAP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TDC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TDG": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TDY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TE": {
+      "rows": 1484,
+      "first": "2020-10-23",
+      "last": "2026-09-22",
+      "execution_prices": 1484,
+      "news_sessions": 0
+    },
+    "TECH": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TEL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TER": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TFC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TFX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TGT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "THC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TJX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TKO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TMO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TMUS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TPL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TPR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TRGP": {
+      "rows": 3772,
+      "first": "2011-09-21",
+      "last": "2026-09-22",
+      "execution_prices": 3772,
+      "news_sessions": 0
+    },
+    "TRIP": {
+      "rows": 3519,
+      "first": "2012-09-21",
+      "last": "2026-09-22",
+      "execution_prices": 3519,
+      "news_sessions": 0
+    },
+    "TRMB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TROW": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TRV": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TSCO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TSLA": {
+      "rows": 3884,
+      "first": "2011-04-12",
+      "last": "2026-09-22",
+      "execution_prices": 3884,
+      "news_sessions": 0
+    },
+    "TSN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TTD": {
+      "rows": 2315,
+      "first": "2017-07-07",
+      "last": "2026-09-22",
+      "execution_prices": 2315,
+      "news_sessions": 0
+    },
+    "TTWO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TXN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TXT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "TYL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "UA": {
+      "rows": 2441,
+      "first": "2017-01-05",
+      "last": "2026-09-22",
+      "execution_prices": 2441,
+      "news_sessions": 0
+    },
+    "UAA": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "UAL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "UBER": {
+      "rows": 1653,
+      "first": "2020-02-25",
+      "last": "2026-09-22",
+      "execution_prices": 1653,
+      "news_sessions": 0
+    },
+    "UDR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "UHS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ULTA": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "UNH": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "UNM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "UNP": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "UPS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "URBN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "URI": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "USB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "V": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "VEEV": {
+      "rows": 3053,
+      "first": "2014-08-01",
+      "last": "2026-09-22",
+      "execution_prices": 3053,
+      "news_sessions": 0
+    },
+    "VFC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "VIAV": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "VICI": {
+      "rows": 1993,
+      "first": "2018-10-16",
+      "last": "2026-09-22",
+      "execution_prices": 1993,
+      "news_sessions": 0
+    },
+    "VLO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "VLTO": {
+      "rows": 545,
+      "first": "2024-07-22",
+      "last": "2026-09-22",
+      "execution_prices": 545,
+      "news_sessions": 0
+    },
+    "VMC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "VMRK": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "VNO": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "VNT": {
+      "rows": 1306,
+      "first": "2021-07-12",
+      "last": "2026-09-22",
+      "execution_prices": 1306,
+      "news_sessions": 0
+    },
+    "VRSK": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "VRSN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "VRT": {
+      "rows": 1846,
+      "first": "2019-05-20",
+      "last": "2026-09-22",
+      "execution_prices": 1846,
+      "news_sessions": 0
+    },
+    "VRTX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "VST": {
+      "rows": 2305,
+      "first": "2017-07-21",
+      "last": "2026-09-22",
+      "execution_prices": 2305,
+      "news_sessions": 0
+    },
+    "VTR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "VTRS": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "VZ": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WAB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WAT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WBD": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WDAY": {
+      "rows": 3305,
+      "first": "2013-08-01",
+      "last": "2026-09-22",
+      "execution_prices": 3305,
+      "news_sessions": 0
+    },
+    "WDC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WEC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WELL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WFC": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WHR": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WMB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WMT": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WRB": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WSM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WST": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WTW": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WU": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "WYNN": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "XEL": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "XOM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "XRAY": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "XRX": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "XYL": {
+      "rows": 3557,
+      "first": "2012-07-30",
+      "last": "2026-09-22",
+      "execution_prices": 3557,
+      "news_sessions": 0
+    },
+    "XYZ": {
+      "rows": 2525,
+      "first": "2016-09-06",
+      "last": "2026-09-22",
+      "execution_prices": 2525,
+      "news_sessions": 0
+    },
+    "YUM": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ZBH": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ZBRA": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ZION": {
+      "rows": 4006,
+      "first": "2010-10-18",
+      "last": "2026-09-22",
+      "execution_prices": 4006,
+      "news_sessions": 0
+    },
+    "ZTS": {
+      "rows": 3231,
+      "first": "2013-11-14",
+      "last": "2026-09-22",
+      "execution_prices": 3231,
+      "news_sessions": 0
+    }
+  },
+  "failed": {
+    "AABA": "No downloadable history; may be delisted or unavailable from provider",
+    "ABC": "No downloadable history; may be delisted or unavailable from provider",
+    "ABMD": "No downloadable history; may be delisted or unavailable from provider",
+    "ACS": "No downloadable history; may be delisted or unavailable from provider",
+    "ADS": "No downloadable history; may be delisted or unavailable from provider",
+    "AET": "No downloadable history; may be delisted or unavailable from provider",
+    "AGN": "No downloadable history; may be delisted or unavailable from provider",
+    "AKS": "No downloadable history; may be delisted or unavailable from provider",
+    "ALTR": "No downloadable history; may be delisted or unavailable from provider",
+    "ALXN": "No downloadable history; may be delisted or unavailable from provider",
+    "ANDV": "No downloadable history; may be delisted or unavailable from provider",
+    "ANRZQ": "No downloadable history; may be delisted or unavailable from provider",
+    "ANSS": "No downloadable history; may be delisted or unavailable from provider",
+    "ANTM": "No downloadable history; may be delisted or unavailable from provider",
+    "APC": "No usable technical history",
+    "APOL": "No downloadable history; may be delisted or unavailable from provider",
+    "ARG": "No downloadable history; may be delisted or unavailable from provider",
+    "ARNC": "No downloadable history; may be delisted or unavailable from provider",
+    "ATGE": "No downloadable history; may be delisted or unavailable from provider",
+    "ATVI": "No downloadable history; may be delisted or unavailable from provider",
+    "AVB": "index 14 is out of bounds for axis 0 with size 14",
+    "AVP": "No downloadable history; may be delisted or unavailable from provider",
+    "AYE": "No downloadable history; may be delisted or unavailable from provider",
+    "BBBY": "No usable technical history",
+    "BCR": "No downloadable history; may be delisted or unavailable from provider",
+    "BDK": "No downloadable history; may be delisted or unavailable from provider",
+    "BHGE": "No downloadable history; may be delisted or unavailable from provider",
+    "BIG": "No downloadable history; may be delisted or unavailable from provider",
+    "BJS": "No downloadable history; may be delisted or unavailable from provider",
+    "BK": "No downloadable history; may be delisted or unavailable from provider",
+    "BLL": "No downloadable history; may be delisted or unavailable from provider",
+    "BMC": "No downloadable history; may be delisted or unavailable from provider",
+    "BMS": "No downloadable history; may be delisted or unavailable from provider",
+    "BNI": "No downloadable history; may be delisted or unavailable from provider",
+    "BRCM": "No downloadable history; may be delisted or unavailable from provider",
+    "BTUUQ": "No downloadable history; may be delisted or unavailable from provider",
+    "BXLT": "No downloadable history; may be delisted or unavailable from provider",
+    "CA": "No downloadable history; may be delisted or unavailable from provider",
+    "CBE": "No downloadable history; may be delisted or unavailable from provider",
+    "CBS": "No downloadable history; may be delisted or unavailable from provider",
+    "CCE": "No downloadable history; may be delisted or unavailable from provider",
+    "CDAY": "No downloadable history; may be delisted or unavailable from provider",
+    "CELG": "No downloadable history; may be delisted or unavailable from provider",
+    "CEPH": "No downloadable history; may be delisted or unavailable from provider",
+    "CERN": "No downloadable history; may be delisted or unavailable from provider",
+    "CFN": "No downloadable history; may be delisted or unavailable from provider",
+    "CHK": "No downloadable history; may be delisted or unavailable from provider",
+    "CMA": "No downloadable history; may be delisted or unavailable from provider",
+    "CMCSK": "No downloadable history; may be delisted or unavailable from provider",
+    "COG": "No downloadable history; may be delisted or unavailable from provider",
+    "COL": "No downloadable history; may be delisted or unavailable from provider",
+    "COV": "No downloadable history; may be delisted or unavailable from provider",
+    "CPGX": "No downloadable history; may be delisted or unavailable from provider",
+    "CSRA": "No usable technical history",
+    "CTL": "No downloadable history; may be delisted or unavailable from provider",
+    "CTLT": "No downloadable history; may be delisted or unavailable from provider",
+    "CTRA": "No downloadable history; may be delisted or unavailable from provider",
+    "CTXS": "No downloadable history; may be delisted or unavailable from provider",
+    "CVC": "No downloadable history; may be delisted or unavailable from provider",
+    "CVH": "No downloadable history; may be delisted or unavailable from provider",
+    "CXO": "No downloadable history; may be delisted or unavailable from provider",
+    "DAY": "No downloadable history; may be delisted or unavailable from provider",
+    "DF": "No downloadable history; may be delisted or unavailable from provider",
+    "DFS": "No downloadable history; may be delisted or unavailable from provider",
+    "DISCA": "No downloadable history; may be delisted or unavailable from provider",
+    "DISCK": "No downloadable history; may be delisted or unavailable from provider",
+    "DISH": "No downloadable history; may be delisted or unavailable from provider",
+    "DNB": "No downloadable history; may be delisted or unavailable from provider",
+    "DNR": "No downloadable history; may be delisted or unavailable from provider",
+    "DO": "No downloadable history; may be delisted or unavailable from provider",
+    "DRE": "No downloadable history; may be delisted or unavailable from provider",
+    "DTV": "No downloadable history; may be delisted or unavailable from provider",
+    "DWDP": "No downloadable history; may be delisted or unavailable from provider",
+    "EA": "index 13 is out of bounds for axis 0 with size 1",
+    "EKDKQ": "No downloadable history; may be delisted or unavailable from provider",
+    "ENDP": "No downloadable history; may be delisted or unavailable from provider",
+    "EQR": "index 13 is out of bounds for axis 0 with size 1",
+    "ESRX": "No downloadable history; may be delisted or unavailable from provider",
+    "ESV": "No downloadable history; may be delisted or unavailable from provider",
+    "ETFC": "No downloadable history; may be delisted or unavailable from provider",
+    "EVHC": "No downloadable history; may be delisted or unavailable from provider",
+    "FBHS": "No downloadable history; may be delisted or unavailable from provider",
+    "FDO": "No downloadable history; may be delisted or unavailable from provider",
+    "FDXF": "No usable technical history",
+    "FI": "No downloadable history; may be delisted or unavailable from provider",
+    "FII": "No downloadable history; may be delisted or unavailable from provider",
+    "FL": "No downloadable history; may be delisted or unavailable from provider",
+    "FLIR": "No downloadable history; may be delisted or unavailable from provider",
+    "FLT": "No downloadable history; may be delisted or unavailable from provider",
+    "FRC": "No downloadable history; may be delisted or unavailable from provider",
+    "FRX": "No downloadable history; may be delisted or unavailable from provider",
+    "FTR": "No downloadable history; may be delisted or unavailable from provider",
+    "GAS": "No downloadable history; may be delisted or unavailable from provider",
+    "GGP": "No downloadable history; may be delisted or unavailable from provider",
+    "GMCR": "No downloadable history; may be delisted or unavailable from provider",
+    "GPS": "No downloadable history; may be delisted or unavailable from provider",
+    "GR": "No downloadable history; may be delisted or unavailable from provider",
+    "HAR": "No downloadable history; may be delisted or unavailable from provider",
+    "HBI": "No downloadable history; may be delisted or unavailable from provider",
+    "HCBK": "No downloadable history; may be delisted or unavailable from provider",
+    "HCP": "No downloadable history; may be delisted or unavailable from provider",
+    "HES": "No downloadable history; may be delisted or unavailable from provider",
+    "HFC": "No downloadable history; may be delisted or unavailable from provider",
+    "HNZ": "No downloadable history; may be delisted or unavailable from provider",
+    "HOLX": "No downloadable history; may be delisted or unavailable from provider",
+    "HONA": "No usable technical history",
+    "HOT": "No downloadable history; may be delisted or unavailable from provider",
+    "HRS": "No downloadable history; may be delisted or unavailable from provider",
+    "HSH": "No downloadable history; may be delisted or unavailable from provider",
+    "HSP": "No downloadable history; may be delisted or unavailable from provider",
+    "IGT": "No downloadable history; may be delisted or unavailable from provider",
+    "IPG": "No downloadable history; may be delisted or unavailable from provider",
+    "JCP": "No downloadable history; may be delisted or unavailable from provider",
+    "JEC": "No downloadable history; may be delisted or unavailable from provider",
+    "JNPR": "No downloadable history; may be delisted or unavailable from provider",
+    "JNS": "No downloadable history; may be delisted or unavailable from provider",
+    "JOY": "No downloadable history; may be delisted or unavailable from provider",
+    "JWN": "No downloadable history; may be delisted or unavailable from provider",
+    "K": "No downloadable history; may be delisted or unavailable from provider",
+    "KORS": "No downloadable history; may be delisted or unavailable from provider",
+    "KRFT": "No downloadable history; may be delisted or unavailable from provider",
+    "KSU": "No downloadable history; may be delisted or unavailable from provider",
+    "LEG": "index 13 is out of bounds for axis 0 with size 7",
+    "LIFE": "No usable technical history",
+    "LLL": "No downloadable history; may be delisted or unavailable from provider",
+    "LLTC": "No downloadable history; may be delisted or unavailable from provider",
+    "LM": "No downloadable history; may be delisted or unavailable from provider",
+    "LO": "No downloadable history; may be delisted or unavailable from provider",
+    "LSI": "No downloadable history; may be delisted or unavailable from provider",
+    "LVLT": "No downloadable history; may be delisted or unavailable from provider",
+    "LXK": "No downloadable history; may be delisted or unavailable from provider",
+    "MDP": "No downloadable history; may be delisted or unavailable from provider",
+    "MEE": "No downloadable history; may be delisted or unavailable from provider",
+    "MFE": "No downloadable history; may be delisted or unavailable from provider",
+    "MHS": "No downloadable history; may be delisted or unavailable from provider",
+    "MIL": "No downloadable history; may be delisted or unavailable from provider",
+    "MJN": "No downloadable history; may be delisted or unavailable from provider",
+    "MMC": "No downloadable history; may be delisted or unavailable from provider",
+    "MNK": "No downloadable history; may be delisted or unavailable from provider",
+    "MOLX": "No downloadable history; may be delisted or unavailable from provider",
+    "MON": "No downloadable history; may be delisted or unavailable from provider",
+    "MRO": "No downloadable history; may be delisted or unavailable from provider",
+    "MWV": "No downloadable history; may be delisted or unavailable from provider",
+    "MWW": "No downloadable history; may be delisted or unavailable from provider",
+    "MXIM": "No downloadable history; may be delisted or unavailable from provider",
+    "MYL": "No downloadable history; may be delisted or unavailable from provider",
+    "NBL": "No downloadable history; may be delisted or unavailable from provider",
+    "NFX": "No usable technical history",
+    "NLOK": "No downloadable history; may be delisted or unavailable from provider",
+    "NLSN": "No downloadable history; may be delisted or unavailable from provider",
+    "NOVL": "No downloadable history; may be delisted or unavailable from provider",
+    "NSM": "No downloadable history; may be delisted or unavailable from provider",
+    "NVLS": "No downloadable history; may be delisted or unavailable from provider",
+    "NYX": "No downloadable history; may be delisted or unavailable from provider",
+    "ODP": "No downloadable history; may be delisted or unavailable from provider",
+    "PBCT": "No downloadable history; may be delisted or unavailable from provider",
+    "PBG": "No downloadable history; may be delisted or unavailable from provider",
+    "PCP": "No downloadable history; may be delisted or unavailable from provider",
+    "PDCO": "No downloadable history; may be delisted or unavailable from provider",
+    "PEAK": "No downloadable history; may be delisted or unavailable from provider",
+    "PETM": "No downloadable history; may be delisted or unavailable from provider",
+    "PGN": "No downloadable history; may be delisted or unavailable from provider",
+    "PKI": "No downloadable history; may be delisted or unavailable from provider",
+    "PLL": "No downloadable history; may be delisted or unavailable from provider",
+    "PTV": "No downloadable history; may be delisted or unavailable from provider",
+    "PX": "No downloadable history; may be delisted or unavailable from provider",
+    "PXD": "No downloadable history; may be delisted or unavailable from provider",
+    "QEP": "No downloadable history; may be delisted or unavailable from provider",
+    "QLGC": "No downloadable history; may be delisted or unavailable from provider",
+    "RAI": "No downloadable history; may be delisted or unavailable from provider",
+    "RDC": "No downloadable history; may be delisted or unavailable from provider",
+    "RE": "No downloadable history; may be delisted or unavailable from provider",
+    "RHT": "No downloadable history; may be delisted or unavailable from provider",
+    "RRD": "No downloadable history; may be delisted or unavailable from provider",
+    "RSHCQ": "No downloadable history; may be delisted or unavailable from provider",
+    "RTN": "No downloadable history; may be delisted or unavailable from provider",
+    "RX": "No downloadable history; may be delisted or unavailable from provider",
+    "SATS": "No downloadable history; may be delisted or unavailable from provider",
+    "SCG": "No downloadable history; may be delisted or unavailable from provider",
+    "SEE": "No downloadable history; may be delisted or unavailable from provider",
+    "SIAL": "No downloadable history; may be delisted or unavailable from provider",
+    "SIVB": "No downloadable history; may be delisted or unavailable from provider",
+    "SNI": "No downloadable history; may be delisted or unavailable from provider",
+    "SPLS": "No usable technical history",
+    "SRCL": "No downloadable history; may be delisted or unavailable from provider",
+    "STJ": "No downloadable history; may be delisted or unavailable from provider",
+    "STR": "No downloadable history; may be delisted or unavailable from provider",
+    "SUNEQ": "No downloadable history; may be delisted or unavailable from provider",
+    "SVU": "No downloadable history; may be delisted or unavailable from provider",
+    "SWN": "No downloadable history; may be delisted or unavailable from provider",
+    "SWY": "No downloadable history; may be delisted or unavailable from provider",
+    "SYMC": "No downloadable history; may be delisted or unavailable from provider",
+    "TEG": "No downloadable history; may be delisted or unavailable from provider",
+    "TGNA": "No downloadable history; may be delisted or unavailable from provider",
+    "TIE": "No downloadable history; may be delisted or unavailable from provider",
+    "TIF": "No downloadable history; may be delisted or unavailable from provider",
+    "TLAB": "No downloadable history; may be delisted or unavailable from provider",
+    "TMK": "No downloadable history; may be delisted or unavailable from provider",
+    "TSS": "No downloadable history; may be delisted or unavailable from provider",
+    "TWC": "No downloadable history; may be delisted or unavailable from provider",
+    "TWTR": "No downloadable history; may be delisted or unavailable from provider",
+    "TWX": "No downloadable history; may be delisted or unavailable from provider",
+    "UTX": "No downloadable history; may be delisted or unavailable from provider",
+    "VAR": "No downloadable history; may be delisted or unavailable from provider",
+    "VIAB": "No downloadable history; may be delisted or unavailable from provider",
+    "VIAC": "No downloadable history; may be delisted or unavailable from provider",
+    "WBA": "No downloadable history; may be delisted or unavailable from provider",
+    "WCG": "No downloadable history; may be delisted or unavailable from provider",
+    "WFM": "No downloadable history; may be delisted or unavailable from provider",
+    "WIN": "No downloadable history; may be delisted or unavailable from provider",
+    "WLTW": "No downloadable history; may be delisted or unavailable from provider",
+    "WPX": "No downloadable history; may be delisted or unavailable from provider",
+    "WRK": "No downloadable history; may be delisted or unavailable from provider",
+    "WYND": "No downloadable history; may be delisted or unavailable from provider",
+    "X": "No downloadable history; may be delisted or unavailable from provider",
+    "XEC": "No downloadable history; may be delisted or unavailable from provider",
+    "XL": "No downloadable history; may be delisted or unavailable from provider",
+    "XLNX": "No downloadable history; may be delisted or unavailable from provider",
+    "XTO": "No downloadable history; may be delisted or unavailable from provider"
+  },
+  "elapsed_seconds": 1982.1,
+  "completed_at": "2026-09-23T18:33:25.629942"
+}

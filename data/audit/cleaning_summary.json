@@ -1,0 +1,14 @@
+{
+  "tickers_total": 7,
+  "tickers_ok": 7,
+  "tickers_failed": 0,
+  "rows_imputed_total": 2,
+  "rows_excluded_longgap_total": 0,
+  "ohlc_breach_total": 1,
+  "impossible_dropped_total": 0,
+  "nonpositive_price_total": 0,
+  "negative_volume_total": 0,
+  "suspected_splits_total": 0,
+  "tickers_without_executable_prices": 5,
+  "failed_tickers": []
+}

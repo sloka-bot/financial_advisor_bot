@@ -1,0 +1,16 @@
+{
+  "package_versions": {
+    "python": "3.11.15",
+    "scikit-learn": "1.9.1",
+    "xgboost": "3.2.0",
+    "torch": "2.14.0",
+    "pandas": "3.0.6",
+    "numpy": "2.4.6",
+    "scipy": "1.17.1"
+  },
+  "feature_schema_hash": "9546420e09cac6b0",
+  "n_features": 44,
+  "feature_pipeline_version": 1,
+  "data_version": null,
+  "saved_at": "2026-09-27T10:06:45"
+}

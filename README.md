@@ -6,7 +6,7 @@ construction, and plain-language explanations behind a single web interface. It
 does not execute trades or manage real money, and every recommendation is meant
 to be independently verified.
 
-The prediction layer and the portfolio layer are deliberately **firewalled**: the
+Forecasting and portfolio optimisation have separate inputs: the
 optimiser sets weights from historical prices and the user's risk profile only,
 and the model forecasts are shown as display metadata, not fed into allocation.
 This keeps portfolio evaluation independent of forecast quality.
@@ -40,7 +40,7 @@ ollama pull llama3.2
 ollama serve
 ```
 
-Ollama runs entirely locally and needs **no API key** - the app only reads
+Ollama runs locally and reads
 `OLLAMA_URL` and `OLLAMA_MODEL` from `.env` (defaults `http://localhost:11434`
 and `llama3.2`). If Ollama is not running, the advisor falls back to a
 deterministic template, so the app still works.
@@ -59,7 +59,7 @@ ollama serve
 source venv/bin/activate
 uvicorn backend.main:app --reload --port 8000
 
-# Then open the app (use this URL, NOT the index.html file directly):
+# Then open the app (use this URL)
 open http://localhost:8000/app/
 ```
 
@@ -96,8 +96,37 @@ point-in-time S&P 500 membership filter.
 
 The 21-day model is the primary deployed artifact used by the recommendation
 engine; the 1/5-day models are used only by the predictor's horizon selector and
-never touch the 21-day model registry. All LSTM training uses one consistent
-schedule (50 epochs max, early-stop patience 10, batch 256).
+never touch the 21-day model registry. Deployed LSTM training uses up to 50 epochs, early-stop patience 10 and batch
+size 256. The saved evaluation run used its separate 15-epoch budget.
+
+## Reproducing the experiments
+
+The forecasting and portfolio results in the report are produced by the research
+scripts below. Existing datasets and trained artifacts can be reused; run
+`./venv/bin/python -m pip check` first to confirm the environment.
+
+```bash
+# Forecasting: experimental regressors and rules,
+# then the deployed architectures on a separate chronological split
+./venv/bin/python -u scripts/run_experiments.py --sp500-only --start 2010-01-01 --end 2023-12-31
+./venv/bin/python -u scripts/evaluate_deployed.py --sp500-only --with-lstm --start 2010-01-01 --end 2023-12-31
+
+# Portfolio: PPO vs Markowitz on historical-price inputs (three seeds)
+./venv/bin/python -u scripts/train_ppo_oos.py --sp500-only --seeds 3 --start 2010-01-01 --end 2023-12-31
+
+# Explanations and checks
+./venv/bin/python scripts/export_explanations.py
+./venv/bin/python scripts/verify_portfolio.py
+```
+
+`scripts/run_advisor.py` runs the end-to-end demo (download, features, news
+scoring, one recommendation) into a throwaway session directory; it never writes
+the deployed models, which come only from the training scripts above. LSTM
+comparisons use the same sequence-eligible test rows for every baseline, and
+exclusion counts are recorded. The default model seed is 42; PPO uses seeds 0, 1
+and 2. Corrected reruns are kept distinct from earlier results and are not a
+newly unseen test set. Local credentials, saved profiles, logs and caches are
+excluded from distribution.
 
 ## Application tabs
 
@@ -186,7 +215,7 @@ scripts/               retrain_models.py, retrain_lstm.py, train_horizons.py,
                        run_experiments.py, train_ppo_oos.py, run_advisor.py, ...
 tests/                 pytest suite (isolated from the production model dir)
 
-models/                Saved artifacts (not in version control)
+models/                Local weights and versioned training metadata
   xgboost/  lstm/  rl/
 data/                  Price data, features, sentiment, results
   raw/  processed/  features/ (per-ticker *.csv and *_master.csv)
@@ -239,11 +268,12 @@ a headline accuracy figure. Reproduce the experiment matrix with
 
 ## Known limitations
 
-- Directional prediction over 21 sessions is near the difficulty ceiling for
-  daily equity data; measured accuracy is close to the baselines.
+- Directional prediction over 21 sessions is close to the evaluated baselines;
+  these configurations do not establish a reliable predictive advantage.
 - Historical sentiment features come from FNSPID; live sentiment reads only
   recent headlines, so the two are different data sources.
 - The PPO agent is trained offline and is an experimental comparator, not part of
   the live portfolio path.
-- The experiment subset uses continuously-listed tickers, which is survivor-biased
-  and limits how far its numbers generalise to the full universe.
+- Portfolio comparisons use a common-history subset, which can introduce selection
+  bias. Forecast experiments apply historical membership, but unavailable delisted
+  histories can still limit coverage.

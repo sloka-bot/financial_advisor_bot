@@ -1,4 +1,4 @@
-/* - Design tokens - */
+/* Design tokens */
 :root {
   --bg-0: #060a12;
   --bg-1: #0b1220;
@@ -39,7 +39,7 @@
   --shadow-lg: 0 8px 32px rgba(0, 0, 0, 0.6);
 }
 
-/* - Reset - */
+/* Reset */
 *,
 *::before,
 *::after {
@@ -91,7 +91,7 @@ ul {
   border-radius: 10px;
 }
 
-/* - Future feature styles - */
+/* Upcoming-feature tag */
 .future-tag {
   display: inline-flex;
   align-items: center;
@@ -151,14 +151,14 @@ ul {
   font-weight: 600;
 }
 
-/* - App shell - */
+/* App shell */
 #app-layout {
   display: flex;
   height: 100vh;
   overflow: hidden;
 }
 
-/* - Sidebar - */
+/* Sidebar */
 #sidebar {
   width: var(--sidebar-w);
   min-width: var(--sidebar-w);
@@ -271,7 +271,7 @@ ul {
   border-top: 1px solid var(--border);
 }
 
-/* - Top bar - */
+/* Top bar */
 #top-bar {
   height: var(--bar-h);
   display: flex;
@@ -328,7 +328,7 @@ ul {
   border-color: var(--border-hi);
 }
 
-/* - Main content - */
+/* Main content */
 #main-content {
   flex: 1;
   display: flex;
@@ -348,7 +348,7 @@ ul {
   display: block;
 }
 
-/* - Typography - */
+/* Typography */
 .page-heading {
   font-size: 15px;
   font-weight: 700;
@@ -377,7 +377,7 @@ ul {
   margin-top: 3px;
 }
 
-/* - Cards - */
+/* Cards */
 .card {
   background: var(--bg-card);
   border: 1px solid var(--border);
@@ -423,7 +423,7 @@ ul {
   margin-top: 4px;
 }
 
-/* - Chart containers - */
+/* Chart containers */
 .chart-row {
   display: grid;
   grid-template-columns: 2fr 1fr;
@@ -471,7 +471,7 @@ ul {
   margin-bottom: 14px;
 }
 
-/* - Chips - */
+/* Chips */
 .chip {
   padding: 4px 10px;
   border-radius: 20px;
@@ -493,7 +493,7 @@ ul {
   color: var(--green);
 }
 
-/* - Badges - */
+/* Badges */
 .badge {
   display: inline-flex;
   align-items: center;
@@ -531,7 +531,7 @@ ul {
   color: var(--txt-2);
 }
 
-/* - Data table - */
+/* Data table */
 .data-table {
   width: 100%;
   border-collapse: collapse;
@@ -589,7 +589,7 @@ ul {
   margin-top: 3px;
 }
 
-/* - Forms - */
+/* Forms */
 .styled-select {
   width: 100%;
   padding: 8px 10px;
@@ -663,7 +663,7 @@ ul {
   color: var(--txt-3);
 }
 
-/* - Buttons - */
+/* Buttons */
 .btn-primary {
   padding: 9px 18px;
   background: var(--green);
@@ -707,7 +707,7 @@ ul {
   cursor: not-allowed;
 }
 
-/* - Tools - */
+/* Tools */
 .tools-tabs {
   display: flex;
   gap: 4px;
@@ -812,7 +812,7 @@ ul {
   color: var(--red);
 }
 
-/* - Portfolio - */
+/* Portfolio */
 .portfolio-header {
   display: flex;
   align-items: center;
@@ -843,7 +843,7 @@ ul {
   font-weight: 700;
 }
 
-/* - Advisor - */
+/* Advisor */
 .advisor-layout {
   display: grid;
   grid-template-columns: 1fr 380px;
@@ -1014,7 +1014,7 @@ ul {
   font-size: 28px;
 }
 
-/* - Analysis page - */
+/* Analysis page */
 .analysis-search {
   display: flex;
   gap: 10px;
@@ -1121,7 +1121,7 @@ ul {
   text-align: right;
 }
 
-/* - Signal heat grid - */
+/* Signal heat grid */
 .signal-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
@@ -1164,7 +1164,7 @@ ul {
   border-color: var(--red);
 }
 
-/* - Empty state - */
+/* Empty state */
 .empty-state {
   text-align: center;
   padding: 48px 24px;
@@ -1180,7 +1180,7 @@ ul {
   color: var(--txt-2);
 }
 
-/* - Onboarding - */
+/* Onboarding */
 #onboarding-overlay {
   position: fixed;
   inset: 0;
@@ -1219,7 +1219,7 @@ ul {
   color: var(--txt-2);
 }
 
-/* - Toast - */
+/* Toast */
 .toast {
   position: fixed;
   bottom: 24px;
@@ -1271,7 +1271,7 @@ ul {
   display: none !important;
 }
 
-/* - Pipeline loading overlay - */
+/* Pipeline loading overlay */
 #pipeline-overlay {
   position: fixed;
   inset: 0;
@@ -1377,7 +1377,7 @@ ul {
   animation: spin 1s linear infinite;
 }
 
-/* - Pipeline loader overlay - */
+/* Pipeline loader overlay */
 #pipeline-overlay {
   position: fixed;
   inset: 0;

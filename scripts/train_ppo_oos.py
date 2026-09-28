@@ -1,16 +1,4 @@
-"""Evaluate historical-price portfolio allocation using Markowitz and PPO.
-
-Markowitz estimates returns from trailing prices. PPO observes market features.
-Neither method consumes XGBoost, LSTM or HMM forecasts.
-
-Both methods use a shared held-out date window and transaction-cost rate.
-PPO rebalances daily; Markowitz rebalances every forecast horizon. Their risk
-metrics therefore have different sampling frequencies. The common-history
-universe also excludes assets with incomplete overlapping records.
-
-PPO evaluation applies the selected risk-profile constraints and reports the
-worst drawdown across evaluation episodes.
-"""
+"""Compare Markowitz and PPO portfolio allocation on a shared held-out window."""
 
 import argparse
 import json
@@ -30,7 +18,7 @@ from backend.config.settings import (
     RISK_CONSTRAINTS,
     TX_COST,
 )
-from backend.data.contracts import json_safe
+from backend.data.contracts import to_jsonable
 from backend.evaluation import experiments as ex
 from backend.portfolio.markowitz import MarkowitzOptimizer
 
@@ -41,7 +29,7 @@ OUT = Path("data/experiments")
 OUT.mkdir(parents=True, exist_ok=True)
 FEATURES_DIR = Path("data/features")
 
-TEST_FRAC = 0.25  # final fraction of the timeline held out for BOTH methods
+TEST_FRAC = 0.25  # held-out fraction for both methods
 
 
 def load_master(limit, sp500_only, start, end):
@@ -49,8 +37,7 @@ def load_master(limit, sp500_only, start, end):
     files = sorted(FEATURES_DIR.glob("*_master.csv"))
     tickers = [f.stem.replace("_master", "") for f in files]
     if sp500_only:
-        # FATAL for a research run: if membership cannot be established we must NOT
-        # silently continue with the full (survivorship-biased) ticker list.
+        # Stop when membership cannot be established.
         from backend.universe.sp500_membership import SP500Membership, normalize
 
         eligible = set(SP500Membership().eligible_between(start, end))
@@ -69,7 +56,7 @@ def load_master(limit, sp500_only, start, end):
             if not isinstance(df.index, pd.DatetimeIndex):
                 df.index = pd.to_datetime(df.index, errors="coerce")
             df = df[~df.index.isna()].sort_index()
-            df = df.loc[(df.index >= start_ts) & (df.index <= end_ts)]  # honour the window
+            df = df.loc[(df.index >= start_ts) & (df.index <= end_ts)]  # restrict to the window
             if len(df) > 300:
                 data[t] = df
         except Exception as exc:
@@ -78,9 +65,7 @@ def load_master(limit, sp500_only, start, end):
     return data
 
 
-# --------------------------------------------------------------------------- #
-# Portfolio comparison over the shared held-out window (price history only)
-# --------------------------------------------------------------------------- #
+# Portfolio comparison on the held-out window using price history only.
 def align_comparison_window(data, horizon, test_frac=TEST_FRAC):
     """Use one common calendar and a whole number of holding periods."""
     common = sorted(set.intersection(*(set(frame.index) for frame in data.values())))
@@ -100,22 +85,12 @@ def align_comparison_window(data, horizon, test_frac=TEST_FRAC):
 
 
 def portfolio_comparison(master_data, horizon, risk_profile, split_date, top_k=10, capital=1000.0, point_in_time=False):
-    """Compare portfolio-construction methods on the shared final window.
-
-    FIREWALL: every method here uses PRICE HISTORY ONLY - no XGBoost/LSTM/HMM
-    prediction ever enters. Markowitz expected returns are trailing realised
-    means from strictly-earlier prices; the equal-weight line is a pure baseline.
-
-    Note: the historical_markowitz methods first screen to the top-K trailing
-    positive-return names (plus retained holdings), so they include a return-based
-    selection stage, not mean-variance optimisation over the full universe.
-    """
+    """Compare portfolio-construction methods on the shared final window using price history only."""
     panel = ex.build_panel(master_data, horizon)
     if panel.empty:
         return {"error": "empty panel"}
     if point_in_time:
-        # Keep only (ticker, date) rows where the ticker was actually an index member
-        # on that date, so the portfolio universe is genuinely point-in-time per row.
+        # Keep ticker-date rows inside index membership.
         from backend.universe.universe_builder import UniverseBuilder
 
         panel = UniverseBuilder().filter_eligible_rows(panel, strict=True)
@@ -127,7 +102,7 @@ def portfolio_comparison(master_data, horizon, risk_profile, split_date, top_k=1
     test_panel = panel.loc[panel.index.isin(test_dates)]
     mkw = MarkowitzOptimizer()
 
-    # equal-weight buy-and-hold baseline over the window
+    # Equal-weight buy-and-hold baseline.
     eq = ex.trading_backtest(test_panel, lambda row: 1.0, horizon, top_k=top_k, tx_cost=TX_COST, capital=capital)
 
     def historical_markowitz(
@@ -143,19 +118,16 @@ def portfolio_comparison(master_data, horizon, risk_profile, split_date, top_k=1
         prev = {}
         for d in rebal:
             day = test_panel.loc[test_panel.index == d]
-            # trailing realised returns from prices STRICTLY BEFORE d (causal)
+            # Trailing realised returns from prices before d.
             hist = {}
             for t in day["ticker"].unique():
                 r = master_data[t]["close"].pct_change()
                 r = r[r.index < d].tail(lookback)
                 if len(r) >= 60:
                     hist[t] = r
-            mu_h = {t: float(r.mean()) * horizon for t, r in hist.items()}  # per-horizon expected
+            mu_h = {t: float(r.mean()) * horizon for t, r in hist.items()}  # per-horizon expected return
             top = [t for t in sorted(mu_h, key=mu_h.get, reverse=True) if mu_h[t] > 0][:top_k]
-            # tradable universe = new top picks PLUS names still held from last period
-            # (with usable history), so the cost-aware optimiser sees current holdings
-            # outside the new top-K and can trim/exit them with cost awareness - not
-            # just optimise over the fresh picks while exits are unrepresented.
+            # Tradable universe is the new top picks plus names still held.
             held = [t for t in prev if prev.get(t, 0) > 0 and t in hist]
             universe = list(dict.fromkeys(top + held))
             if not universe:
@@ -165,13 +137,13 @@ def portfolio_comparison(master_data, horizon, risk_profile, split_date, top_k=1
                 turnovers.append(sum(prev.values()))
                 prev = {}
                 continue
-            mu = np.array([mu_h[t] * (252 / horizon) for t in universe])  # annualise for optimiser
+            mu = np.array([mu_h[t] * (252 / horizon) for t in universe])  # annualise for the optimiser
             rmat = pd.DataFrame({t: hist[t] for t in universe})
             cov = mkw.covariance(rmat)
             cur = {t: prev.get(t, 0.0) for t in universe} if cost_aware else None
             opt = mkw.optimize(universe, mu, cov, risk_profile, current_weights=cur)
             if not opt.get("solver_ok", True):
-                solver_failures += 1  # surfaced below; a research run can flag invalid
+                solver_failures += 1  # reported below
             w = opt["weights"]
             if smart_rebal:
                 plan = mkw.plan_rebalance(
@@ -233,9 +205,7 @@ def portfolio_comparison(master_data, horizon, risk_profile, split_date, top_k=1
     }
 
 
-# --------------------------------------------------------------------------- #
-# PPO training on market state only (firewall: no model signals), matched window
-# --------------------------------------------------------------------------- #
+# PPO training on market features over the matched window.
 def train_ppo(master_data, seeds, timesteps, risk_profile, split_date):
     try:
         from backend.portfolio.rl_agent import RLPortfolioAgent
@@ -247,30 +217,24 @@ def train_ppo(master_data, seeds, timesteps, risk_profile, split_date):
     results = []
     for seed in range(seeds):
         try:
-            # Independent PPO: PortfolioEnv observes market-state features only (no
-            # model signals). Train on the first `split_frac` of aligned dates and
-            # test on the remainder - the SAME final fraction the Markowitz
-            # comparison uses - so the two methods are judged on a matched window.
-            env = PortfolioEnv(master_data, tickers, strict_features=True)
+            # Train PPO on the first split_frac of dates and test on the rest.
+            env = PortfolioEnv(master_data, tickers, require_features=True)
             split_index = int(env.dates.get_loc(split_date))
             L = env.episode_len
             env.start_idx = max(env.start_idx, int(L * 0.05))
-            env.end_idx = split_index - 1  # train window (random starts)
+            env.end_idx = split_index - 1  # training window with random starts
             agent = RLPortfolioAgent()
-            _tr = agent.train(env, total_timesteps=timesteps, seed=seed)  # seed reaches PPO
-            # DETERMINISTIC evaluation: one pass over the ENTIRE held-out window
-            # (deterministic_reset), so every seed is scored on the identical fixed
-            # test period - directly comparable to the Markowitz traversal, instead
-            # of averaging three random sub-windows.
+            _tr = agent.train(env, total_timesteps=timesteps, seed=seed)  # per-run seed
+            # Deterministic evaluation over the full held-out window.
             test_env = PortfolioEnv(
                 master_data,
                 tickers,
                 start_idx=split_index + 1,
                 end_idx=L - 1,
-                strict_features=True,
+                require_features=True,
                 deterministic_reset=True,
             )
-            # evaluate on profile-CONSTRAINED weights (what the advisor would trade)
+            # Evaluate on profile-constrained weights.
             perf = agent.evaluate(test_env, n_episodes=1, risk_profile=risk_profile)
             seed_dir = OUT / "ppo_seeds" / str(seed)
             seed_dir.mkdir(parents=True, exist_ok=True)
@@ -353,7 +317,7 @@ def main():
         logger.info(f"Training PPO (market state only, {args.seeds} seeds)...")
         out["ppo"] = train_ppo(data, args.seeds, args.timesteps, args.risk_profile, split_date)
 
-    (OUT / "portfolio_results.json").write_text(json.dumps(json_safe(out), indent=2, default=str, allow_nan=False))
+    (OUT / "portfolio_results.json").write_text(json.dumps(to_jsonable(out), indent=2, default=str, allow_nan=False))
     logger.info(f"Results -> {OUT / 'portfolio_results.json'}")
     print(json.dumps(comp, indent=2, default=str))
 

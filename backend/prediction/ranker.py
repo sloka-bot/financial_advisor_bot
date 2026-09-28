@@ -1,17 +1,11 @@
-"""
-ranker.py
-
-Combines the ML model signal, FinBERT sentiment, and technical indicators
-into a single composite score for each stock. The composite score only RANKS and
-orders names; the BUY / HOLD / SELL label is set from the absolute model outputs
-(XGBoost probability and LSTM expected return) in the recommendation engine, not
-from this score.
-"""
+"""Rank stocks by combined factors while leaving action labels to the signal classifier."""
 
 import logging
 
 import numpy as np
 import pandas as pd
+
+from backend.data.contracts import finite_number
 
 logger = logging.getLogger(__name__)
 
@@ -25,7 +19,6 @@ MIN_NEWS_FOR_RELIABLE_SENTIMENT = 3
 
 
 class StockRanker:
-    # Score every ticker by combining the ML signal, sentiment, and momentum into a composite
     """Rank prediction evidence with risk-profile-specific component weights."""
 
     def rank(self, predictions: dict, master_data: dict, risk_profile: str) -> pd.DataFrame:
@@ -40,16 +33,15 @@ class StockRanker:
 
             latest = df.iloc[-1]
 
-            vol = float(latest.get("volatility", 0.02) or 0.02)
-            rsi = float(latest.get("rsi", 50.0) or 50.0)
-            momentum = float(latest.get("momentum_10d", 0.0) or 0.0)
-            sent_raw = float(latest.get("sent_score", 0.0) or 0.0)
-            n_news = int(latest.get("sent_news_count", 0) or 0)
+            vol = finite_number(latest.get("volatility"), 0.02)
+            rsi = finite_number(latest.get("rsi"), 50.0)
+            momentum = finite_number(latest.get("momentum_10d"), 0.0)
+            sent_raw = finite_number(latest.get("sent_score"), 0.0)
+            n_news = int(finite_number(latest.get("sent_news_count"), 0))
             sent_label = str(latest.get("sent_label", "neutral") or "neutral")
-            close = float(latest.get("close", 0.0) or 0.0)
+            close = finite_number(latest.get("close"), 0.0)
 
-            # prediction is a named dict {prob_up, expected_return, horizon, ...};
-            # tolerate a bare number for backward compatibility.
+            # Accept named prediction fields or scalar predictions.
             if isinstance(pr, dict):
                 exp_ret = pr.get("expected_return")
                 prob_up = pr.get("prob_up")
@@ -57,9 +49,7 @@ class StockRanker:
             else:
                 exp_ret, prob_up, horizon = (float(pr) if pr is not None else None), None, None
 
-            # factor 1: risk-adjusted SIGNAL (a score input, not a return). Prefer
-            # the LSTM's estimated return per unit risk; if only the XGBoost
-            # probability exists, use its directional edge (prob-0.5) per unit risk.
+            # Scale the return estimate or probability edge by horizon risk.
             if exp_ret is not None:
                 risk_adj = exp_ret / (vol + 1e-9)
             elif prob_up is not None:
@@ -67,27 +57,25 @@ class StockRanker:
             else:
                 risk_adj = 0.0
 
-            # factor 2: sentiment quality - discount light coverage
+            # Sentiment quality, discounting light coverage.
             coverage_weight = min(1.0, n_news / MIN_NEWS_FOR_RELIABLE_SENTIMENT)
             sent_quality = sent_raw * coverage_weight
 
-            # factor 3: momentum filtered by RSI headroom
+            # Momentum filtered by RSI headroom.
             rsi_room = (100 - rsi) / 100
             mom_quality = momentum * rsi_room
 
-            # factor 4: stability - negative vol rewards steady stocks
+            # Stability rewards low volatility.
             stability = -vol
 
             rows.append(
                 {
                     "ticker": ticker,
-                    # both model outputs kept SEPARATE and named (never merged):
+                    # Model outputs kept as separate named fields.
                     "prob_up": round(float(prob_up), 4) if prob_up is not None else None,
                     "expected_return": round(float(exp_ret), 6) if exp_ret is not None else None,
                     "horizon": horizon,
-                    # `predicted_return` retained as an alias of the LSTM expected
-                    # return (decimal) so existing consumers keep working; it is a
-                    # return estimate, not the ranking score.
+                    # Retain the decimal return alias for existing API consumers.
                     "predicted_return": float(exp_ret) if exp_ret is not None else None,
                     "as_of": pr.get("as_of") if isinstance(pr, dict) else None,
                     "volatility": round(vol, 6),
@@ -109,9 +97,7 @@ class StockRanker:
 
         df = pd.DataFrame(rows)
 
-        # z-score normalise each factor and clip at ±3σ. A single row gives a NaN
-        # std (which is truthy, so `std or 1e-8` would not substitute the floor), so
-        # guard explicitly against a non-finite or near-zero std before dividing.
+        # Standardise each factor, clipping at three deviations.
         for col in ["_f1", "_f2", "_f3", "_f4"]:
             mu = df[col].mean()
             std = df[col].std()
@@ -129,7 +115,7 @@ class StockRanker:
         df = df.drop(columns=["_f1", "_f2", "_f3", "_f4", "raw_score"])
         df = df.sort_values("composite_score", ascending=False).reset_index(drop=True)
 
-        # add integer rank (1 = best) so recommender can reference it
+        # Integer rank, 1 is best.
         df["rank"] = df.index + 1
 
         logger.info(f"Ranked {len(df)} tickers - profile: {risk_profile}")

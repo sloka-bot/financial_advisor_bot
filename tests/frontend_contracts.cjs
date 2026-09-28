@@ -20,8 +20,9 @@ const context = {
       (elements[id] ??= { style: {}, innerHTML: "", textContent: "" }),
   },
   setText: (id, text) => ((elements[id] ??= {}).textContent = text),
-  safeChart: () => null,
+  drawChart: () => null,
   allocationChart: () => null,
+  compoundChart: () => null,
 };
 vm.createContext(context);
 for (const file of [
@@ -50,6 +51,10 @@ vm.runInContext("renderDashboard()", context);
 assert(elements["view-dashboard"].innerHTML.includes("$1,000.00"));
 assert(elements["view-dashboard"].innerHTML.includes("No saved positions"));
 assert(!elements["view-dashboard"].innerHTML.includes("Projected over"));
+assert(elements["view-dashboard"].innerHTML.includes("assumed 5% annual rate"));
+vm.runInContext("state.portfolioData.portfolio.total_value = null; renderDashboard()", context);
+assert(elements["view-dashboard"].innerHTML.includes("Unavailable"));
+vm.runInContext("state.portfolioData.portfolio.total_value = 1000", context);
 vm.runInContext("renderHoldings([])", context);
 assert(elements["holdings-wrap"].innerHTML.includes("No saved holdings"));
 vm.runInContext(
@@ -91,3 +96,19 @@ assert(Number.isFinite(vm.runInContext("randn()", context)));
 console.log(
   "Calculator contracts passed: valid zero inputs and finite simulation draws.",
 );
+
+context.state.userId = "test";
+context.api = {getUserRecs: async () => ({pending: Array.from({length: 7}, (_, i) => ({id: i + 1, ticker: `T${i}`, action: "BUY", factors: {}}))})};
+(async () => {
+  await vm.runInContext("loadPendingRecommendations()", context);
+  const queueHtml = elements["rec-panel"].innerHTML;
+  assert.equal((queueHtml.match(/data-action="approve"/g) || []).length, 3);
+  assert(queueHtml.includes("Showing 3 of 7"));
+  assert(!queueHtml.includes('data-rec="4"'));
+  console.log("Recommendation display passed: three visible from seven queued.");
+})().catch(error => { console.error(error); process.exitCode = 1; });
+
+vm.runInContext("renderHoldings([{ticker:'TEST',shares:2,price:100,current_price:100}])", context);
+assert(elements["holdings-wrap"].innerHTML.includes('data-action="buy-more"'));
+assert(elements["holdings-wrap"].innerHTML.includes('data-action="sell"'));
+console.log("Holding controls passed: Buy more and Sell are available.");

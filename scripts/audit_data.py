@@ -1,23 +1,4 @@
-"""
-audit_data.py
-
-Runs data-integrity checks and writes an audit report.
-Each category records automated pass/fail outcomes and observation counts:
-
-  Stock identity     - S&P 500 membership audit (eligibility dates per ticker)
-  Corporate actions  - suspected un-applied splits; artificial-spike scan
-  Trading calendar   - no weekend rows / duplicate sessions after cleaning
-  Invalid obs        - nonpositive price, negative volume, OHLC breach = 0 unresolved
-  Missing data       - imputed (short ffill) vs excluded (long gap) counts
-  Outliers           - flagged (never deleted) counts
-
-Feasibility: benchmark on a subset first with --limit, then run the full
-universe. Coverage actually evaluated is reported in the output.
-
-Usage:
-    python scripts/audit_data.py --limit 30
-    python scripts/audit_data.py --sp500-only --start 2010-01-01 --end 2023-12-31
-"""
+"""Run data-integrity checks and write an audit report."""
 
 import argparse
 import json
@@ -44,7 +25,7 @@ def raw_tickers():
 
 
 def identity_check(tickers, start, end):
-    """S&P 500 point-in-time membership audit. Degrades loudly if unavailable."""
+    """Audit point-in-time S&P 500 membership, reporting when history is unavailable."""
     try:
         m = SP500Membership()
         m.write_audit()
@@ -85,7 +66,7 @@ def run(limit=None, sp500_only=False, start="2010-01-01", end="2023-12-31"):
     logger.info(f"Auditing {len(tickers)} tickers")
 
     cleaner = DataCleaner(raw_dir=str(RAW_DIR))
-    cleaner.clean_universe(tickers)  # writes cleaning_audit.csv + summary
+    cleaner.clean_universe(tickers)  # writes cleaning_audit.csv and summary
     audit = pd.read_csv(AUDIT_DIR / "cleaning_audit.csv")
     ok = audit[audit["status"] == "ok"] if "status" in audit else audit
 
@@ -95,7 +76,7 @@ def run(limit=None, sp500_only=False, start="2010-01-01", end="2023-12-31"):
     checks = []
     checks.append(identity)
 
-    # trading calendar: cleaning removes weekends/dupes; confirm none remain reported
+    # Trading calendar: confirm no weekend or duplicate sessions remain.
     checks.append(
         {
             "check": "trading_calendar",
@@ -105,7 +86,7 @@ def run(limit=None, sp500_only=False, start="2010-01-01", end="2023-12-31"):
         }
     )
 
-    # invalid observations must have 0 UNRESOLVED violations (all were repaired/dropped)
+    # Invalid observations: count unresolved violations.
     impossible = total("impossible_rows_dropped")
     checks.append(
         {
@@ -119,7 +100,7 @@ def run(limit=None, sp500_only=False, start="2010-01-01", end="2023-12-31"):
         }
     )
 
-    # missing data: imputed vs excluded, and NO backfill (guaranteed by cleaner)
+    # Missing data: imputed versus excluded rows.
     checks.append(
         {
             "check": "missing_data",
@@ -130,7 +111,7 @@ def run(limit=None, sp500_only=False, start="2010-01-01", end="2023-12-31"):
         }
     )
 
-    # corporate actions
+    # Corporate actions.
     splits = total("suspected_splits")
     no_exec = int((~ok.get("has_executable_prices", pd.Series([False] * len(ok))).fillna(False)).sum())
     checks.append(
@@ -148,7 +129,7 @@ def run(limit=None, sp500_only=False, start="2010-01-01", end="2023-12-31"):
         }
     )
 
-    # outliers preserved
+    # Outliers.
     checks.append(
         {
             "check": "outliers",

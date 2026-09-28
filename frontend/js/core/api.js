@@ -1,10 +1,4 @@
-/*
- * api.js
- *
- * All HTTP calls to the FastAPI backend go through this object.
- * Keeping every endpoint reference here means changing the base URL
- * or a path only needs editing in one place.
- */
+/* HTTP client for the FastAPI backend. */
 
 const BASE =
   location.protocol === "file:" ? "http://localhost:8000" : location.origin;
@@ -62,6 +56,7 @@ const api = {
   modelStatus: () => get("/api/model-status"),
   pipelineStatus: () => get("/api/pipeline-status"),
   ollamaStatus: () => get("/api/ollama-status"),
+  correlation: (userId) => get(`/api/user/${userId}/correlation`),
   regime: () => get("/api/regime"),
 
   stockHistory: (ticker, days = 120) =>
@@ -69,7 +64,7 @@ const api = {
   analysis: (ticker, risk = "moderate", horizon = 21) =>
     get(`/api/analysis/${ticker}?risk_profile=${encodeURIComponent(risk)}&horizon=${horizon}`),
 
-  /* user profile */
+  /* User profile */
   getUser: (userId) => get(`/api/user/${userId}`),
   createUser: (userId, profile) => post(`/api/user/${userId}`, profile),
   updateUser: (userId, profile) => put(`/api/user/${userId}`, profile),
@@ -77,14 +72,18 @@ const api = {
   getUserRecs: (userId) => get(`/api/user/${userId}/recommendations`),
   importPortfolio: (userId, holdings) =>
     post(`/api/user/${userId}/import-portfolio`, { user_id: userId, holdings }),
+  sellHolding: (userId, ticker) =>
+    post(`/api/user/${userId}/sell`, { ticker }),
+  buyMore: (userId, ticker, shares) => post(`/api/user/${userId}/buy`, { ticker, shares }),
+  buildPortfolio: (userId) => post(`/api/user/${userId}/build`, {}),
 
-  /* recommendations approval */
+  /* Recommendation approval */
   approveRec: (userId, recId) =>
     post("/api/recommendations/approve", { user_id: userId, rec_id: recId }),
   rejectRec: (userId, recId) =>
     post("/api/recommendations/reject", { user_id: userId, rec_id: recId }),
 
-  /* pipeline */
+  /* Pipeline */
   runPipeline: (market, index, risk, budget, scope = "sample", uid = "") =>
     post("/api/run", {
       market,
@@ -96,7 +95,7 @@ const api = {
     }),
   advisorRun: (userId) => post(`/api/advisor/run/${userId}`, {}),
 
-  /* analysis */
+  /* Analysis */
   recommend: (market, index, risk, n = 10) =>
     post("/api/recommend", { market, index, risk_profile: risk, top_n: n }),
   portfolio: (market, index, risk, budget, n = 10) =>
@@ -111,7 +110,7 @@ const api = {
   backtest: (tickers, capital = 10000, mode = false) =>
     post("/api/backtest", { tickers, capital, portfolio_mode: mode }),
 
-  /* chat - mode is 'normal' or 'beginner' */
+  /* Chat; mode is 'normal' or 'beginner' */
   chat: (message, portfolio, context, mode = "normal", userId = "dev-user") =>
     post("/api/chat", { message, portfolio, context, mode, user_id: userId }),
 
@@ -124,7 +123,7 @@ const api = {
     post("/api/backtest-predict", { ticker, start_date, window }),
   generateRecs: (userId) => post(`/api/recommendations/generate/${userId}`, {}),
 
-  /* leakage-free date-range backtest + saved experiment evidence */
+  /* Date-range backtest and saved experiment results */
   backtestRange: (
     tickers,
     start_date,
@@ -144,7 +143,7 @@ const api = {
   riskPreview: (risk_profile, budget) =>
     post("/api/risk-preview", { risk_profile, budget }),
 
-  /* raw HTTP helpers */
+  /* Raw HTTP helpers */
   get: (path) => get(path),
   post: (path, body) => post(path, body),
 };

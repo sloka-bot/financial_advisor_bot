@@ -35,7 +35,7 @@ assert all(pool["num_threads"] == 1 for pool in threadpool_info() if pool["user_
 print("Native runtime check passed")
 """
     env = os.environ.copy()
-    # Confirm the application, rather than an inherited shell setting, applies the fix.
+    # Confirm the application sets the runtime configuration.
     env["OMP_NUM_THREADS"] = "8"
     result = subprocess.run(
         [sys.executable, "-X", "faulthandler", "-c", script], env=env, capture_output=True, text=True, timeout=60

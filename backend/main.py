@@ -1,13 +1,5 @@
-"""
-main.py - FastAPI application entry point for the Financial Advisor Bot backend.
-
-The backend exposes a REST API consumed by the vanilla HTML/JS frontend.
-All ML training runs in a background thread so the API stays responsive
-while the pipeline executes. Pipeline progress is polled by the frontend
-via /api/pipeline-status.
-
-Author: Sloka Mudunuru
-"""
+"""FastAPI entry point for the Financial Advisor Bot backend."""
+# Author: Sloka Mudunuru
 
 import logging
 from pathlib import Path
@@ -28,7 +20,7 @@ from backend.api.routers import (
     users,
 )
 from backend.api.routers.imports import router as import_router
-from backend.data.contracts import json_safe
+from backend.data.contracts import to_jsonable
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(message)s", datefmt="%H:%M:%S")
 logger = logging.getLogger(__name__)
@@ -38,15 +30,15 @@ _file_log.setFormatter(logging.Formatter("%(asctime)s %(levelname)s %(name)s %(m
 logging.getLogger().addHandler(_file_log)
 
 
-class SafeJSONResponse(JSONResponse):
-    """Serialize numerical results with non-finite values represented as null."""
+class FiniteJSONResponse(JSONResponse):
+    """Serialise responses with non-finite values as null."""
 
     def render(self, content):
-        """Sanitise numerical values before encoding the JSON response."""
-        return super().render(json_safe(content))
+        """Replace non-finite values before encoding."""
+        return super().render(to_jsonable(content))
 
 
-app = FastAPI(title="Financial Advisor Bot API", version="1.1.0", default_response_class=SafeJSONResponse)
+app = FastAPI(title="Financial Advisor Bot API", version="1.1.0", default_response_class=FiniteJSONResponse)
 
 
 @app.middleware("http")

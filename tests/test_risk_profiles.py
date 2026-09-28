@@ -1,11 +1,4 @@
-"""
-test_profile_enforcement.py
-
-Tests that the risk profile actually changes the
-algorithm and that its constraints are ENFORCED on the final, executable
-allocation - after whole-share rounding and fees - not merely reflected in a
-different label. Also covers the cost-aware optimiser and smarter rebalancing.
-"""
+"""Risk-profile constraints, cost-aware optimisation and rebalancing rules."""
 
 import unittest
 
@@ -16,7 +9,7 @@ from backend.portfolio.markowitz import MarkowitzOptimizer, validate_allocation
 
 
 def _toy_market(n=8, seed=0):
-    """A small, well-posed market: distinct expected returns + a PSD covariance."""
+    """Small market with distinct expected returns and a PSD covariance."""
     rng = np.random.default_rng(seed)
     tickers = [f"T{i}" for i in range(n)]
     mu = np.linspace(0.05, 0.25, n)  # annualised expected returns
@@ -26,25 +19,25 @@ def _toy_market(n=8, seed=0):
     return tickers, mu, cov, prices
 
 
-class TestProfileEnforcement(unittest.TestCase):
+class TestRiskProfiles(unittest.TestCase):
     def setUp(self):
         self.mkw = MarkowitzOptimizer()
         self.tickers, self.mu, self.cov, self.prices = _toy_market()
 
-    # -- the profile must change the optimiser's own weights ------------------
+    # Profiles change the optimiser weights.
     def test_profiles_produce_different_allocations(self):
         allocs = {
             p: self.mkw.optimize(self.tickers, self.mu, self.cov, p)["weights"]
             for p in ("conservative", "moderate", "aggressive")
         }
         cash = {p: allocs[p]["CASH"] for p in allocs}
-        # min-cash floors force strictly more cash as the profile gets safer
+        # Safer profiles hold more cash.
         self.assertGreater(cash["conservative"], cash["aggressive"])
         self.assertGreaterEqual(cash["conservative"] + 1e-9, RISK_CONSTRAINTS["conservative"]["min_cash"])
-        # the three weight vectors are genuinely different, not relabelled
+        # The three weight vectors differ.
         self.assertNotEqual(allocs["conservative"], allocs["aggressive"])
 
-    # -- optimiser weights respect the per-profile caps -----------------------
+    # Optimiser weights respect per-profile caps.
     def test_optimizer_respects_caps(self):
         for p, cons in RISK_CONSTRAINTS.items():
             w = self.mkw.optimize(self.tickers, self.mu, self.cov, p)["weights"]
@@ -56,8 +49,8 @@ class TestProfileEnforcement(unittest.TestCase):
                 sum(stock_w.values()), 1.0 - cons["min_cash"] + 1e-6, f"{p}: invested more than the cash floor allows"
             )
 
-    # -- constraints still hold on the EXECUTABLE book (after rounding+fees) ---
-    def test_enforced_after_share_rounding_and_fees(self):
+    # Constraints hold after rounding and fees.
+    def test_caps_hold_after_rounding_and_fees(self):
         for p in RISK_CONSTRAINTS:
             w = self.mkw.optimize(self.tickers, self.mu, self.cov, p)["weights"]
             alloc = self.mkw.to_shares(w, self.prices, budget=100_000.0, allow_fractional=False)
@@ -65,8 +58,8 @@ class TestProfileEnforcement(unittest.TestCase):
             self.assertTrue(report["ok"], f"{p}: {report['violations']}")
             self.assertTrue(alloc["reconciles"], f"{p}: allocation must reconcile to budget")
 
-    # -- a tiny budget must not smuggle in an over-cap position ---------------
-    def test_small_budget_still_enforced(self):
+    # A small budget stays within the cap.
+    def test_small_budget_respects_caps(self):
         w = self.mkw.optimize(self.tickers, self.mu, self.cov, "conservative")["weights"]
         alloc = self.mkw.to_shares(w, self.prices, budget=800.0, allow_fractional=False)
         self.assertTrue(validate_allocation(alloc, "conservative")["ok"])
@@ -78,9 +71,7 @@ class TestCostAwareOptimizer(unittest.TestCase):
         self.tickers, self.mu, self.cov, _ = _toy_market()
 
     def test_cost_aware_reduces_turnover_from_current_book(self):
-        # start from the plain optimum, then re-optimise with only slightly
-        # changed expected returns: cost-aware should move LESS than a fresh
-        # cost-blind re-optimisation.
+        # Cost-aware re-optimisation moves less than a cost-blind one.
         base = self.mkw.optimize(self.tickers, self.mu, self.cov, "moderate")["weights"]
         current = {t: base.get(t, 0.0) for t in self.tickers}
         mu2 = self.mu + np.random.default_rng(1).normal(0, 0.01, len(self.mu))
@@ -97,7 +88,7 @@ class TestCostAwareOptimizer(unittest.TestCase):
         )
 
     def test_cost_aware_backward_compatible(self):
-        # with no current_weights the result matches the plain optimiser
+        # Without current_weights the result matches the plain optimiser.
         a = self.mkw.optimize(self.tickers, self.mu, self.cov, "moderate")["weights"]
         b = self.mkw.optimize(self.tickers, self.mu, self.cov, "moderate", current_weights=None)["weights"]
         self.assertEqual(a, b)
@@ -119,7 +110,7 @@ class TestSmartRebalance(unittest.TestCase):
         current = {"A": 0.10, "CASH": 0.90}
         target = {"A": 0.50, "CASH": 0.50}
         plan = self.mkw.plan_rebalance(current, target, no_trade_band=0.0, adjust_fraction=0.5, min_trade=0.0)
-        # halfway from 0.10 to 0.50 is 0.30
+        # Halfway from 0.10 to 0.50 is 0.30.
         self.assertAlmostEqual(plan["executed_weights"]["A"], 0.30, places=6)
 
     def test_full_rebalance_when_levers_off(self):

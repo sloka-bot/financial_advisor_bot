@@ -25,8 +25,7 @@ def export(model_dir, features_dir, output, max_rows=500, end="2023-12-31"):
     rows, labels = [], []
     for path in sorted(features_dir.glob("*_master.csv")):
         frame = pd.read_csv(path, index_col=0, parse_dates=True)
-        # Explain the latest within-window observation (matches the 2010-2023 report
-        # window), never a later newsless row.
+        # Explain the latest observation inside the 2010-2023 report window.
         frame = frame.loc[frame.index <= pd.Timestamp(end)]
         if frame.empty or not set(features).issubset(frame.columns):
             continue
@@ -44,22 +43,22 @@ def export(model_dir, features_dir, output, max_rows=500, end="2023-12-31"):
     output.mkdir(parents=True, exist_ok=True)
 
     def _save(stem):
-        # Save each figure as PNG (report inclusion) and SVG (vector, print-quality).
+        # Save each figure as PNG and SVG.
         plt.savefig(output / f"{stem}.png", dpi=180, bbox_inches="tight")
         plt.savefig(output / f"{stem}.svg", bbox_inches="tight")
         plt.close()
 
-    # 1) Global bar: mean absolute SHAP contribution per feature.
+    # Global bar: mean absolute SHAP value per feature.
     shap.plots.bar(explanation, max_display=15, show=False)
     plt.title("Mean absolute SHAP contribution: latest observations")
     _save("shap_bar")
 
-    # 2) Beeswarm summary: per-observation SHAP value distribution per feature.
+    # Beeswarm: SHAP value distribution per feature.
     shap.plots.beeswarm(explanation, max_display=15, show=False)
     plt.title("SHAP summary (beeswarm): feature effect distribution")
     _save("shap_summary")
 
-    # 3) Local waterfall: one observation's contributions.
+    # Local waterfall for one observation.
     shap.plots.waterfall(explanation[0], max_display=15, show=False)
     plt.title(f"{labels[0]['ticker']}: {labels[0]['date']}")
     _save("shap_waterfall")
@@ -70,7 +69,9 @@ def export(model_dir, features_dir, output, max_rows=500, end="2023-12-31"):
         "observations": labels,
         "local_observation": labels[0],
         "saved_plots": [
-            "shap_bar.(png|svg)", "shap_summary.(png|svg)", "shap_waterfall.(png|svg)",
+            "shap_bar.(png|svg)",
+            "shap_summary.(png|svg)",
+            "shap_waterfall.(png|svg)",
         ],
         "interpretation": (
             "Raw classifier margin (log odds), before isotonic calibration. "

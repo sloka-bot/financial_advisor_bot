@@ -1,4 +1,4 @@
-# Python 3.11 (developed on 3.11.15). Exact pins taken from the project venv.
+# Python 3.11 with pinned package versions.
 # Core numerical / ML stack
 numpy==2.4.6
 pandas==3.0.6
@@ -37,3 +37,4 @@ joblib==1.6.0
 
 # Testing
 pytest==9.1.1
+httpx==0.28.1

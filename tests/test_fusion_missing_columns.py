@@ -1,4 +1,4 @@
-"""Malformed sentiment must not prevent technical features from being used."""
+"""Technical features remain usable when sentiment columns are malformed."""
 
 import pandas as pd
 import pytest

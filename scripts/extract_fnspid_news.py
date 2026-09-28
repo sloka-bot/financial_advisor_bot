@@ -1,15 +1,4 @@
-"""
-extract_fnspid_news.py  (Stage 1, resumable)
-
-Streams the 22GB FNSPID CSV, keeps only S&P-500 rows, writes compact
-per-ticker raw news (date,title,summary). Resumable: checkpoints rows
-processed to data/fnspid/state.json and self-stops before the shell's
-time cap, so it survives VM reboots and can be re-run to continue.
-
-Fresh run (no state.json)  -> truncates each ticker file on first write.
-Resume  (state.json exists)-> skips already-processed rows, appends.
-Duplicates possible only for a chunk interrupted mid-write; de-duped in Stage 2.
-"""
+"""Stream the FNSPID CSV into per-ticker S&P 500 news files with resumable checkpoints."""
 
 import json
 import os
@@ -36,9 +25,9 @@ match_set = set(canon)
 
 COLS = ["Date", "Stock_symbol", "Article_title", "Textrank_summary"]
 CHUNK = 250_000
-TIME_BUDGET = 150  # seconds of real work before graceful stop
+TIME_BUDGET = 150  # seconds of work before a checkpointed stop
 
-# --- load / init checkpoint ---
+# Load or initialise the checkpoint.
 if os.path.exists(STATE):
     st = json.load(open(STATE))
     fresh = False
@@ -49,7 +38,7 @@ skip = st["rows_processed"]
 _cpath = os.path.join(D, "counts.json")
 counts = Counter(json.load(open(_cpath))) if os.path.exists(_cpath) else Counter()
 
-header_seen = set()  # tickers written this run (controls w vs a on fresh run)
+header_seen = set()  # tickers written this run
 t0 = time.time()
 rows_this = 0
 matched_this = 0
@@ -76,7 +65,7 @@ for chunk in reader:
             )
             path = os.path.join(OUT, f"{sym.replace('/', '_')}.csv")
             if fresh and sym not in header_seen:
-                out.to_csv(path, mode="w", header=True, index=False)  # truncate stale partial
+                out.to_csv(path, mode="w", header=True, index=False)  # truncate partial file
             else:
                 write_header = not os.path.exists(path)
                 out.to_csv(path, mode="a", header=write_header, index=False)

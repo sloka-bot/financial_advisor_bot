@@ -1,0 +1,115 @@
+{
+  "best_val_loss": 0.000404,
+  "best_dir_acc": 0.4863,
+  "best_epoch": 2,
+  "total_epochs": 15,
+  "history": [
+    {
+      "epoch": 1,
+      "train_loss": 0.00048,
+      "val_loss": 0.000405,
+      "dir_acc": 0.4863
+    },
+    {
+      "epoch": 2,
+      "train_loss": 0.000468,
+      "val_loss": 0.000404,
+      "dir_acc": 0.4863
+    },
+    {
+      "epoch": 3,
+      "train_loss": 0.000468,
+      "val_loss": 0.000408,
+      "dir_acc": 0.5095
+    },
+    {
+      "epoch": 4,
+      "train_loss": 0.000468,
+      "val_loss": 0.000404,
+      "dir_acc": 0.5095
+    },
+    {
+      "epoch": 5,
+      "train_loss": 0.000468,
+      "val_loss": 0.000404,
+      "dir_acc": 0.5093
+    },
+    {
+      "epoch": 6,
+      "train_loss": 0.000468,
+      "val_loss": 0.000405,
+      "dir_acc": 0.5095
+    },
+    {
+      "epoch": 7,
+      "train_loss": 0.000468,
+      "val_loss": 0.000404,
+      "dir_acc": 0.4863
+    },
+    {
+      "epoch": 8,
+      "train_loss": 0.000468,
+      "val_loss": 0.000407,
+      "dir_acc": 0.5095
+    },
+    {
+      "epoch": 9,
+      "train_loss": 0.000468,
+      "val_loss": 0.000404,
+      "dir_acc": 0.4865
+    },
+    {
+      "epoch": 10,
+      "train_loss": 0.000468,
+      "val_loss": 0.000404,
+      "dir_acc": 0.5095
+    },
+    {
+      "epoch": 11,
+      "train_loss": 0.000468,
+      "val_loss": 0.000405,
+      "dir_acc": 0.4863
+    },
+    {
+      "epoch": 12,
+      "train_loss": 0.000468,
+      "val_loss": 0.000404,
+      "dir_acc": 0.5095
+    },
+    {
+      "epoch": 13,
+      "train_loss": 0.000468,
+      "val_loss": 0.000404,
+      "dir_acc": 0.5095
+    },
+    {
+      "epoch": 14,
+      "train_loss": 0.000468,
+      "val_loss": 0.000404,
+      "dir_acc": 0.5095
+    },
+    {
+      "epoch": 15,
+      "train_loss": 0.000468,
+      "val_loss": 0.000404,
+      "dir_acc": 0.5095
+    }
+  ],
+  "trained_at": "2026-09-27T11:05:00.884594",
+  "horizon": 1,
+  "config": {
+    "epochs_max": 50,
+    "batch_size": 256,
+    "learning_rate": 0.001,
+    "patience": 10,
+    "seq_len": 30,
+    "hidden": 128,
+    "layers": 2,
+    "dropout": 0.2
+  },
+  "n_sequences": 1305267,
+  "date_range": [
+    "2010-10-18",
+    "2023-12-29"
+  ]
+}

@@ -1,19 +1,4 @@
-"""
-run_advisor.py - interactive command-line walkthrough of the full pipeline
-(download -> clean -> features -> news/sentiment -> fuse -> train -> recommend).
-
-This is a DEMO / teaching harness. It trains XGBoost and the LSTM into a throwaway
-session directory (models/_session/) with register=False, so running it - including
-the "Sample - 10 stocks (quick test)" scope - CANNOT overwrite or re-register the
-deployed models. The models it trains live only in memory for this run's
-recommendations.
-
-The deployed models the app serves are produced solely by the reproducible,
-date-capped training scripts:
-    scripts/retrain_models.py   (deployed XGBoost, <= 2023-12-31)
-    scripts/retrain_lstm.py     (deployed LSTM,    <= 2023-12-31)
-    scripts/train_horizons.py   (1- and 5-session side models)
-"""
+"""Interactive command-line walkthrough of the full pipeline using session-only models."""
 
 import logging
 import sys
@@ -113,21 +98,17 @@ def main():
         print("No master data found - check data pipeline")
         sys.exit(1)
 
-    # Point-in-time eligibility: keep each stock's rows only for the dates it was
-    # actually an S&P 500 member. strict=True so the run fails rather than silently
-    # training on a survivorship-biased set if the membership history is missing
-    # (provide data/universe/sp500_history.csv).
+    # Keep rows only for dates each stock was an S&P 500 member.
     combined = builder.filter_eligible_rows(combined, strict=True)
 
     print(f"\nTraining XGBoost on {len(combined)} rows...")
-    # Session-only model: register=False + throwaway dir => never touches the
-    # deployed registry (use retrain_models.py to update the deployed model).
+    # Session-only model that is not registered.
     xgb = XGBoostForecaster(models_dir="models/_session/xgboost")
     xgb_r = xgb.train(combined, register=False)
     print(f"  CV AUC={xgb_r.get('cv_auc_mean')}  DirAcc={xgb_r.get('cv_direction_acc')}")
 
     print("\nTraining LSTM...")
-    # Session-only model in a throwaway dir (use retrain_lstm.py for the deployed one).
+    # Session-only model in a temporary directory.
     lstm = LSTMForecaster(models_dir="models/_session/lstm")
     lstm_r = lstm.train(combined, epochs=50, batch_size=256)
     print(f"  val_loss={lstm_r.get('best_val_loss')}  DirAcc={lstm_r.get('best_dir_acc')}")
@@ -167,7 +148,7 @@ def main():
     rc = RecommendationEngine()
     ex = Explainer()
 
-    # pass risk_profile to rank() and the correct args to construct()
+    # Rank with the selected risk profile.
     ranked = rk.rank(predictions, master_data, risk)
     result = rc.recommend(ranked, risk_profile=risk, top_n=top_n)
     _mlm = (

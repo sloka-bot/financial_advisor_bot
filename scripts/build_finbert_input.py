@@ -1,18 +1,4 @@
-"""Prepare deduplicated historical articles while preserving publication-time precision.
-
-News-to-trading-bar alignment: each article keeps its raw `published_at`. A full
-timestamp is later mapped by the sentiment analyzer to the first NYSE close strictly
-after publication; a DATE-ONLY value (length 10) has unknown intraday timing and is
-mapped conservatively to the following session. This script therefore records how
-many inputs are date-only vs fully timestamped, and drops future-dated rows, so the
-downstream alignment assumptions are auditable.
-
-Multimodal feature transition: the per-day FinBERT sentiment columns (sent_*)
-produced from these articles are fused onto the technical feature matrix in
-fusion.py. The technical set plus the sentiment columns form the multimodal feature
-set the models consume (the exact per-set counts are defined by feature_engineer and
-experiments.all_features / SENTIMENT_FEATURES; see the report's feature table).
-"""
+"""Prepare deduplicated historical articles while preserving publication-time precision."""
 
 import json
 from datetime import datetime, timezone
@@ -35,9 +21,9 @@ def build_inputs(
         "tickers": 0,
         "input_articles": 0,
         "output_articles": 0,
-        "date_only": 0,       # publication with no intraday time -> next-session mapping
-        "timestamped": 0,     # full timestamp -> next-close-after mapping
-        "future_dropped": 0,  # timestamps after 'now' are invalid and dropped
+        "date_only": 0,  # date-only publication maps to the next session
+        "timestamped": 0,  # full timestamp maps to the next close
+        "future_dropped": 0,  # future timestamps are dropped
     }
     _now = datetime.now(timezone.utc)
     with output.open("w") as stream:
@@ -53,8 +39,7 @@ def build_inputs(
             frame = frame[frame["title"].ne("")].drop_duplicates(subset=["date", "title"])
             frame["timestamp"] = pd.to_datetime(frame["date"], errors="coerce", utc=True, format="mixed")
             frame = frame.dropna(subset=["timestamp"]).sort_values("timestamp", kind="stable")
-            # Alignment validation: never accept a future-dated article, and record how
-            # many inputs are date-only (conservative next-session mapping downstream).
+            # Drop future-dated articles and count date-only inputs.
             _future = frame["timestamp"] > _now
             counts["future_dropped"] += int(_future.sum())
             frame = frame[~_future]

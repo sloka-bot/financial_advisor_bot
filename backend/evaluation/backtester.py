@@ -1,28 +1,4 @@
-"""
-Walk-forward, horizon-matched backtester.
-
-For each ticker a FRESH XGBoost direction classifier is trained strictly on rows
-before an out-of-sample split (the last OUT_OF_SAMPLE_FRACTION of the history),
-with an H-session embargo so no training label overlaps the test window, then evaluated
-on the held-out tail. Signal and outcome are matched to the model's horizon
-(H sessions), and trades are NON-overlapping: one H-session trade closes before
-the next opens. (A `model` argument is accepted for call-compatibility and
-ignored - the backtest always trains its own leakage-free model.)
-
-Strategy:
-  - Go long when P(rise over H sessions) > 0.5.
-  - Otherwise hold cash. No short selling, no leverage.
-  - A round-trip transaction cost is charged when the position changes.
-
-Metrics computed:
-  Sharpe ratio            - annualised at the H-session period (Sharpe, 1966).
-  Max drawdown            - worst peak-to-trough of the strategy equity curve.
-  Calmar ratio            - total return / |max drawdown|.
-  Direction accuracy (H)  - fraction of test points where P(up)>0.5 matches the
-                            sign of the H-session forward return.
-  Information coefficient - Spearman correlation of P(up) with the H-session return.
-  Excess return           - strategy total return minus buy-and-hold of the window.
-"""
+"""Evaluate embargoed horizon classifiers with non-overlapping trades and costs."""
 
 import logging
 
@@ -32,19 +8,18 @@ from scipy.stats import spearmanr
 
 from backend.config.settings import (
     PREDICTION_HORIZON,
-    RF_ANNUAL,
     TRADING_DAYS,
     TX_COST,
     embargo_for,
 )
+from backend.evaluation.metrics import annualized_sharpe, max_drawdown
 from backend.portfolio.transaction_costs import transaction_cost
 
-from backend.evaluation.metrics import annualized_sharpe, max_drawdown
 logger = logging.getLogger(__name__)
 
-OUT_OF_SAMPLE_FRACTION = 0.25  # Final quarter reserved for evaluation.
+OUT_OF_SAMPLE_FRACTION = 0.25  # final quarter reserved for evaluation
 
-# labels/meta/executable columns that must never be model features
+# Label, metadata and execution columns excluded from features.
 _EXCLUDED = {
     "trade_return",
     "execution_date",
@@ -83,19 +58,7 @@ class Backtester:
     def run(
         self, ticker: str, df: pd.DataFrame, model=None, capital: float = 10_000, horizon: int = PREDICTION_HORIZON
     ) -> dict:
-        """
-        Leakage-free single-ticker backtest, horizon-matched.
-
-        For each ticker this:
-          * trains a FRESH XGBoost classifier STRICTLY on rows before the split,
-            with an H-session embargo so no training label overlaps the test window
-            (`model` is ignored and kept only for call-compatibility);
-          * predicts P(rise over H sessions) on the test rows;
-          * scores direction accuracy and IC against the H-SESSION forward return;
-          * executes at the following close and holds H sessions;
-          * deducts entry, exit and terminal liquidation costs;
-          * compares against gross buy-and-hold over the same execution window.
-        """
+        """Fit before the test window and score trades executed at the following close."""
         if df is None or len(df) < 120:
             return {"error": f"Not enough data for {ticker}"}
         import xgboost as xgb
@@ -133,7 +96,7 @@ class Backtester:
         y_tr = (fwd.to_numpy()[train_idx] > 0).astype(int)
         if len(np.unique(y_tr)) < 2:
             return {"error": "Training window contains only one direction class"}
-        sc = RobustScaler().fit(Xall[train_idx])  # scaler on TRAIN only
+        sc = RobustScaler().fit(Xall[train_idx])  # scaler fitted on training rows only
         clf = xgb.XGBClassifier(
             n_estimators=300,
             max_depth=5,
@@ -150,7 +113,7 @@ class Backtester:
         proba = clf.predict_proba(sc.transform(Xall[test_idx]))[:, 1]
         fwd_te = fwd.to_numpy()[test_idx]
 
-        # prediction-quality metrics vs the MATCHED H-session outcome
+        # Prediction metrics against the matched H-session outcome.
         dir_acc = float(np.mean((proba > 0.5) == (fwd_te > 0)))
         ic = float(spearmanr(proba, fwd_te).correlation) if len(test_idx) > 2 else 0.0
 
@@ -213,15 +176,13 @@ class Backtester:
                 "excess_return": round(strat_total - bench_total, 4),
                 "max_drawdown": round(max_dd, 4),
                 "calmar_ratio": round(-strat_total / (max_dd or -1e-8), 4),
-                "direction_accuracy_h": round(dir_acc, 4),  # vs H-session outcome (matched)
+                "direction_accuracy_h": round(dir_acc, 4),  # against the matched H-session outcome
                 "information_coefficient": round(ic, 4),
             },
         }
 
     def run_portfolio(self, tickers: list, master_data: dict, model, capital: float = 10_000) -> dict:
-        """
-        Run individual backtests for each ticker and return a portfolio summary.
-        """
+        """Run a backtest for each ticker and return a portfolio summary."""
         results = {}
         for ticker in tickers:
             df = master_data.get(ticker)
@@ -242,7 +203,7 @@ class Backtester:
                 "best_ticker": best_ticker,
                 "n_backtested": len(valid),
             },
-            # return first ticker's curve for chart display
+            # First ticker curve for the chart.
             "equity_curve": valid[tickers[0]]["equity_curve"] if tickers and tickers[0] in valid else [],
             "benchmark_curve": valid[tickers[0]]["benchmark_curve"] if tickers and tickers[0] in valid else [],
         }

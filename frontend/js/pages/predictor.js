@@ -17,10 +17,11 @@ function renderPredictor() {
     <div class="page-intro"><div><span class="section-kicker">From estimate to evidence</span><h1>Stock Predictor</h1><p>Explore a price estimate, then compare historical forecasts with observed prices.</p></div></div>
     <form class="card predictor-search" onsubmit="event.preventDefault(); loadPrediction()"><label for="predictor-ticker">Stock ticker</label><input id="predictor-ticker" class="field-input" value="${escapeHtml(predictorTicker)}" maxlength="12" placeholder="e.g. AAPL" autocomplete="off"><label for="predictor-horizon">Horizon</label><select id="predictor-horizon" class="styled-select styled-select-sm"><option value="1"${predictorHorizon===1?" selected":""}>1 day</option><option value="5"${predictorHorizon===5?" selected":""}>5 days</option><option value="21"${predictorHorizon===21?" selected":""}>21 days</option></select><button class="btn-primary" id="predictor-run" ${predictorBusy ? "disabled" : ""}>${predictorBusy ? "Loading..." : "View forecast"}</button><span class="muted">Saved US equity data · 1 / 5 / 21-session forecast</span></form>
     <div id="predictor-result"><div class="card empty-state">Enter a ticker to see its latest available forecast.</div></div>
-    <div class="card comparison-card"><span class="section-kicker">Check what actually happened</span><h2>Historical forecast comparison</h2><p>A separate XGBoost return model is fitted using data before the chosen period, with a gap equal to the forecast horizon. This tests a historical model; it is not a replay of the latest LSTM forecast above.</p>
+    <div class="card comparison-card"><span class="section-kicker">Check what actually happened</span><h2>Historical forecast comparison</h2><p><strong>What this does:</strong> pick a past start and end date, and it plots what the model predicted the price would be against what the price actually did over that period - so you can see how accurate the model was. It fits a fresh model on data before the chosen period (not a replay of the LSTM forecast above), so it can take a few minutes.</p>
       <form class="comparison-form" onsubmit="event.preventDefault(); loadComparison()"><div><label for="comparison-start">Forecast dates from</label><input id="comparison-start" type="date" class="field-input" value="2023-01-01" required></div><div><label for="comparison-end">Through</label><input id="comparison-end" type="date" class="field-input" value="2023-12-31" required></div><button class="btn-secondary" id="comparison-run" ${comparisonBusy ? "disabled" : ""}>${comparisonBusy ? "Comparing..." : "Compare past forecasts"}</button></form>
       <div id="comparison-result" class="muted">Choose a period with enough earlier data to fit the model. This can take a few minutes.</div>
-    </div>`;
+    </div>
+    <div id="predictor-charts"></div>`;
   if (predictorCache?.ticker === predictorTicker && predictorCache?.horizon === predictorHorizon)
     drawPrediction(predictorCache);
   if (comparisonCache?.ticker === predictorTicker)
@@ -28,7 +29,7 @@ function renderPredictor() {
   updateHorizonAvailability();
 }
 
-// Grey out horizon options that have no trained model (per-horizon availability).
+// Disable horizon options without a trained model.
 async function updateHorizonAvailability() {
   try {
     const status = await api.modelStatus();
@@ -44,7 +45,7 @@ async function updateHorizonAvailability() {
       opt.textContent = known && !ok ? base + " (unavailable)" : base;
     });
   } catch (e) {
-    /* availability is a nicety; ignore if status is unreachable */
+    /* ignore an unreachable status endpoint */
   }
 }
 
@@ -118,9 +119,14 @@ function drawPrediction({ ticker, analysis, history }) {
       <div class="muted">${sigWords}. Support score is a heuristic combining model, sentiment and technical signals - not a probability; the calibrated probability of an increase is shown below.</div>
     </div>
     <div class="stat-row predictor-stats">${dashboardStat(`${escapeHtml(ticker)} · last adjusted close`, money(close), `As of ${escapeHtml(asOf)}`)}${dashboardStat("Estimated adjusted price", money(estimate), `LSTM · ${h} trading sessions ahead`, true)}${dashboardStat("Probability of an increase", probability, "XGBoost direction classifier")}</div>
-    <div class="notice">The future outcome is not known yet. A forecast can be wrong. Prices below are adjusted historical closes, not live quotes or executable prices.</div>
-    <div class="card"><span class="section-kicker">Observed market data</span><h2>${escapeHtml(ticker)} price &amp; indicators</h2><div style="height:280px"><canvas id="predictor-price"></canvas></div></div>
+    <div class="notice">The future outcome is not known yet. A forecast can be wrong. Prices below are adjusted historical closes, not live quotes or executable prices.</div>`;
+  const chartsEl = document.getElementById("predictor-charts");
+  if (chartsEl) chartsEl.innerHTML = `
+    <div class="card" style="margin-top:16px"><span class="section-kicker">Observed market data</span><h2>${escapeHtml(ticker)} price &amp; indicators</h2>
+      <div class="muted" style="font-size:12px;margin-bottom:8px">The stock's price with its 20- and 50-day moving averages and Bollinger bands. The bands widen when the stock is more volatile; price near the upper band is relatively high, near the lower band relatively low.</div>
+      <div style="height:280px"><canvas id="predictor-price"></canvas></div></div>
     <div class="card" style="margin-top:16px"><span class="section-kicker">Technical indicators</span>
+      <div class="muted" style="font-size:12px;margin:6px 0 10px">These summarise recent price behaviour: RSI flags overbought/oversold, MACD shows momentum direction, and volume shows how much trading is happening.</div>
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:18px;margin-top:10px">
         <div><div class="chart-title">RSI (14)</div><div style="height:150px"><canvas id="predictor-rsi"></canvas></div><div class="muted" style="font-size:11px;margin-top:4px">Above 70 overbought · below 30 oversold</div></div>
         <div><div class="chart-title">MACD (12, 26, 9)</div><div style="height:150px"><canvas id="predictor-macd"></canvas></div><div class="muted" style="font-size:11px;margin-top:4px">Histogram above zero = bullish momentum</div></div>
@@ -217,7 +223,7 @@ function drawComparison(result) {
 }
 
 function priceLines(id, labels, series) {
-  safeChart(id, {
+  drawChart(id, {
     type: "line",
     data: {
       labels,

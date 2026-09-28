@@ -30,11 +30,11 @@ data/logs/
 data/users.json
 data/recommendation_outcomes.json
 
-# Retraining keeps timestamped model copies here; not for submission
+# Timestamped model backups
 models/**/archive/
 models/_session/
 
-# Root-level backup archives (not for submission)
+# Root-level backup archives
 /*.zip
 
 # Large raw corpora / heavy experiment artifacts (keep small result JSONs)
@@ -42,3 +42,16 @@ data/news/
 data/fnspid/
 data/experiments/ppo_seeds/
 data/experiments/cache/
+
+# Editor swap files and report deliverables (not code)
+*.swp
+*.swo
+*.sw?
+/*.docx
+
+# Local environment and generated training bundles
+env
+data/experiments.zip
+models/rl/*.zip
+
+node_modules/

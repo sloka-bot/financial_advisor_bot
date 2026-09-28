@@ -1,0 +1,108 @@
+{
+  "coverage": {
+    "tickers_audited": 378,
+    "tickers_ok": 378,
+    "window": {
+      "start": "2010-01-01",
+      "end": "2023-12-31"
+    },
+    "subset_run": false
+  },
+  "checks": [
+    {
+      "check": "stock_identity",
+      "status": "ok",
+      "eligible_members_in_window": 710,
+      "downloaded_tickers": 515,
+      "downloaded_and_eligible": 378,
+      "downloaded_not_in_sp500": [
+        "ABNB",
+        "ACGL",
+        "ALNY",
+        "AMCR",
+        "APO",
+        "APP",
+        "ARES",
+        "ARM",
+        "ASML",
+        "ATO",
+        "AXON",
+        "BALL",
+        "BG",
+        "BKR",
+        "BLDR",
+        "BNY",
+        "BRO",
+        "BX",
+        "CARR",
+        "CASY",
+        "CDW",
+        "CEG",
+        "CIEN",
+        "COHR",
+        "COIN",
+        "COR",
+        "CPAY",
+        "CPT",
+        "CRH",
+        "CRL",
+        "CRWD",
+        "CSGP",
+        "CTVA",
+        "CVNA",
+        "DASH",
+        "DD",
+        "DDOG",
+        "DECK",
+        "DELL",
+        "DOC",
+        "DOW",
+        "DPZ",
+        "DXCM",
+        "EG",
+        "ELV",
+        "EME",
+        "ERIE",
+        "EXE",
+        "FDS",
+        "FDXF"
+      ]
+    },
+    {
+      "check": "trading_calendar",
+      "status": "pass",
+      "weekend_rows_removed": 0,
+      "duplicate_sessions_removed": 0
+    },
+    {
+      "check": "invalid_observations",
+      "status": "pass",
+      "nonpositive_price_rows_removed": 0,
+      "negative_volume_rows_removed": 0,
+      "ohlc_breaches_repaired": 0,
+      "impossible_rows_dropped": 0,
+      "note": "All detected violations were repaired or excluded; 0 remain in output."
+    },
+    {
+      "check": "missing_data",
+      "status": "pass",
+      "rows_imputed_short_ffill": 1,
+      "rows_excluded_long_gap": 0,
+      "backward_fill_used": false
+    },
+    {
+      "check": "corporate_actions",
+      "status": "limited",
+      "suspected_unapplied_splits": 0,
+      "tickers_without_executable_prices": 378,
+      "note": "Split detection needs executable prices; re-download with the new downloader to enable it for legacy files."
+    },
+    {
+      "check": "outliers",
+      "status": "pass",
+      "extreme_move_rows_flagged": 9,
+      "robust_outlier_rows_flagged": 1905,
+      "note": "Flagged for review, never deleted (genuine crashes preserved)."
+    }
+  ]
+}

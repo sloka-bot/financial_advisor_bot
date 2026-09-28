@@ -24,7 +24,7 @@ def health():
 
 @router.get("/api/markets")
 def get_markets():
-    """This project is S&P 500 (US) only - no market/index selection."""
+    """Return the single supported market and index."""
     return {"universe": "S&P 500", "market": "United States"}
 
 

@@ -1,16 +1,4 @@
-"""
-fusion.py
-
-Merges the technical feature matrix with the daily FinBERT sentiment signal to
-produce the per-ticker master dataset the models train on.
-
-The sentiment columns are already named `sent_*` by the analyzer, so there is no
-rename step here. News does not arrive
-every trading day, so a recent score is carried forward for a few sessions, but
-`sent_no_news` records whether that day actually had fresh news - a no-news day
-stays distinguishable from a neutral-news day. The forward-return
-label is defined once here and dropped where it cannot be computed.
-"""
+"""Merge technical and sentiment features and compute horizon-specific return labels."""
 
 import logging
 from pathlib import Path
@@ -22,10 +10,7 @@ from backend.config.settings import PREDICTION_HORIZON
 
 logger = logging.getLogger(__name__)
 
-# Sentiment SCORES decay slowly and may be carried forward a few sessions.
-# Sentiment COUNTS describe how much FRESH news arrived THAT day and must NOT be
-# carried forward - a carried day has no fresh news, so its counts stay 0. The
-# ranker reads sent_news_count as coverage, so carrying it would fake coverage.
+# Carry recent sentiment scores while keeping fresh-news counts session-specific.
 SENT_SCORES = ["sent_score", "sent_weighted", "sent_disagreement"]
 SENT_COUNTS = ["sent_pos", "sent_neg", "sent_neu", "sent_news_count"]
 SENT_NUMERIC = SENT_SCORES + SENT_COUNTS
@@ -33,9 +18,7 @@ FFILL_LIMIT = 5  # carry a recent score forward at most a trading week
 
 
 def _verify_label_horizon(df: pd.DataFrame, horizon: int) -> None:
-    """Fail loudly if a forward-return label does not use the close exactly
-    `horizon` sessions ahead of its anchor row. Guards against an off-by-one or a
-    silently misaligned target when sessions are missing (weekends, holidays)."""
+    """Verify that each return label uses the close exactly horizon sessions ahead."""
     closes = df["close"].to_numpy()
     dates = np.asarray(df.index)
     tgt = df["target_return"].to_numpy()
@@ -110,46 +93,36 @@ class FeatureFusion:
             keep = [c for c in SENT_NUMERIC + ["sent_label"] if c in sent.columns]
             df = df.join(sent[keep], how="left")
 
-            # a day has FRESH news iff it had a sentiment row with a positive count
+            # A day has fresh news when its sentiment row has a positive count.
             had_news = (
                 df["sent_news_count"].fillna(0) > 0 if "sent_news_count" in df else pd.Series(False, index=df.index)
             )
-            # carry only the SCORE columns forward (sentiment decays slowly);
-            # counts stay 0 on carried/no-news days so coverage is never faked
+            # Forward-fill scores only; missing daily article counts remain zero.
             score_cols = [c for c in SENT_SCORES if c in df.columns]
             df[score_cols] = df[score_cols].ffill(limit=FFILL_LIMIT)
             count_cols = [c for c in SENT_COUNTS if c in df.columns]
             df[count_cols] = df[count_cols].fillna(0.0)
-            # carry sent_label forward WITH the score (same limit) so the label and
-            # the numeric score never disagree - a carried +0.7 score would otherwise
-            # show label "neutral". sent_no_news still flags that the news is carried,
-            # not fresh, so the UI can say "carried positive; no new articles today".
+            # Carry sentiment labels with their scores and retain the no-news indicator.
             if "sent_label" in df.columns:
                 df["sent_label"] = df["sent_label"].ffill(limit=FFILL_LIMIT)
-            # no-news flag reflects THIS day, not the carried-forward score
+            # The no-news flag describes this day, not the carried score.
             df["sent_no_news"] = (~had_news).astype(int)
         else:
             df["sent_no_news"] = 1
 
-        # neutral defaults for anything still missing (beyond the carry window)
+        # Neutral defaults beyond the carry window.
         for col in SENT_NUMERIC:
             df[col] = df[col].fillna(0.0) if col in df.columns else 0.0
         df["sent_label"] = df["sent_label"].fillna("neutral") if "sent_label" in df.columns else "neutral"
 
-        # Forward-return label over the horizon (strictly future). The newest `h`
-        # rows have no observed future yet: target_return is NaN there, and
-        # target_direction stays NaN too, not 0, so an unobserved future is not
-        # labelled "down" (`nan > 0` is False).
+        # Leave future returns and directions missing until their horizon has elapsed.
         h = PREDICTION_HORIZON
         df["target_return"] = df["close"].shift(-h) / df["close"] - 1.0
         df["target_direction"] = np.where(df["target_return"].notna(), (df["target_return"] > 0).astype(float), np.nan)
         # Record the session each label matures on and verify the horizon alignment.
         df["target_end_date"] = pd.Series(df.index, index=df.index).shift(-h)
         _verify_label_horizon(df, h)
-        # Keep these newest, label-less rows: they carry the most recent FEATURES
-        # that live inference needs. Training callers must EXCLUDE rows with a
-        # missing target (they do: build_panel recomputes and drops NaN fwd_ret;
-        # the model trainers mask on target.notna()); they must never fill it.
+        # Retain unlabelled recent rows for inference; training excludes missing targets.
         df.replace([float("inf"), float("-inf")], float("nan"), inplace=True)
 
         if save:

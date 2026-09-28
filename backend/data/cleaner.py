@@ -1,31 +1,4 @@
-"""
-cleaner.py
-
-Financial data cleaning with an audit trail.
-
-Design principles
------------------
-1. Never invent a tradable price. Missing prints are forward-filled only,
-   and only for very short gaps (`CLEANING["max_ffill_days"]`). Backward-filling
-   is avoided because it leaks a future price into the past. Longer gaps are
-   treated as suspensions and the affected window is excluded, not filled.
-
-2. Adjusted (analytical) prices and unadjusted (executable) prices are kept
-   separate. Indicators are computed on the adjusted series; the unadjusted
-   series (when available) is what an order would actually have executed at,
-   and is needed to detect un-applied splits. If the raw file only contains
-   adjusted prices, we record that executable prices
-   are unavailable rather than pretending the adjusted price is executable.
-
-3. Every correction or exclusion is counted and returned as an audit record.
-   Extreme moves, outliers, likely splits, OHLC breaches and penny-stock status
-   are flagged (0/1 columns) but never deleted - a real crash
-   is a signal, not an error. Only physically impossible rows are dropped.
-
-The output preserves the exact lowercase OHLCV columns the feature engineer
-expects, so it is a drop-in replacement for the previous cleaner, plus the
-flag columns the models already exclude from their feature set.
-"""
+"""Clean analytical prices, preserve execution prices and record quality findings."""
 
 import json
 import logging
@@ -41,14 +14,12 @@ logger = logging.getLogger(__name__)
 
 REQUIRED = ("open", "high", "low", "close", "volume")
 
-# The executable (raw, unadjusted) close, when the downloader kept it. `close`
-# is always the adjusted analytical price; `close_unadj` is what an order would
-# have executed at and is what makes split detection possible.
+# Keep adjusted analytical prices separate from raw execution prices.
 EXEC_CLOSE_SRC = "close_unadj"
 
 FLAG_COLS = [
     "extreme_move_flag",  # |daily return| beyond CLEANING["extreme_move"]
-    "outlier_flag",  # rolling-MAD robust outlier (never removed)
+    "outlier_flag",  # rolling-MAD outlier, flagged only
     "potential_split_flag",  # unadjusted jump near a split ratio, adj continuous
     "corp_action_flag",  # any suspected corporate action on this row
     "ohlc_breach_flag",  # OHLC ordering violated (repaired or dropped)
@@ -68,14 +39,9 @@ class DataCleaner:
         self.processed_dir.mkdir(parents=True, exist_ok=True)
         self.audit_dir.mkdir(parents=True, exist_ok=True)
 
-    # ------------------------------------------------------------------ #
-    # public API
-    # ------------------------------------------------------------------ #
+    # Public cleaning methods.
     def clean(self, ticker, df=None, save=True):
-        """Clean a single ticker. Returns the cleaned DataFrame, or None.
-
-        The per-ticker audit is available afterwards on `self.last_audit`.
-        """
+        """Clean one ticker and expose its quality findings through last_audit."""
         if df is None:
             df = self._load_raw(ticker)
         if df is None or df.empty:
@@ -87,14 +53,14 @@ class DataCleaner:
         df = df.copy()
         df.columns = [str(c).lower() for c in df.columns]
 
-        # -- de-duplicate and order the calendar --
+        # De-duplicate and sort the calendar.
         df.index = pd.to_datetime(df.index, errors="coerce")
         df = df[~df.index.isna()]
         df = df.sort_index()
         audit["dupe_rows"] = int(df.index.duplicated(keep="first").sum())
         df = df[~df.index.duplicated(keep="first")]
 
-        # weekends should never appear in an equities session series
+        # Drop weekend rows.
         audit["weekend_rows"] = int((df.index.dayofweek >= 5).sum())
         df = df[df.index.dayofweek < 5]
 
@@ -104,7 +70,7 @@ class DataCleaner:
             self.last_audit = {"ticker": ticker, "status": f"missing_columns:{sorted(missing)}"}
             return None
 
-        # keep an executable (unadjusted) close if the download preserved one
+        # Keep the unadjusted close when the download provides one.
         has_exec = EXEC_CLOSE_SRC in df.columns
         if has_exec:
             df["exec_close"] = pd.to_numeric(df[EXEC_CLOSE_SRC], errors="coerce")
@@ -113,7 +79,7 @@ class DataCleaner:
         for col in REQUIRED:
             df[col] = pd.to_numeric(df[col], errors="coerce")
 
-        # -- invalid observations (positive prices, non-negative volume, OHLC order) --
+        # Invalid observations: positive prices, non-negative volume and OHLC order.
         price_cols = ["open", "high", "low", "close"]
         nonpos = (df[price_cols] <= 0).any(axis=1)
         audit["nonpositive_price_rows"] = int(nonpos.sum())
@@ -123,14 +89,13 @@ class DataCleaner:
         audit["negative_volume_rows"] = int(neg_vol.sum())
         df = df[~neg_vol]
 
-        # OHLC ordering: high must be the max and low the min of the four.
+        # High is the maximum and low the minimum of OHLC.
         row_max = df[price_cols].max(axis=1)
         row_min = df[price_cols].min(axis=1)
         breach = (df["high"] < row_max - 1e-9) | (df["low"] > row_min + 1e-9)
         df["ohlc_breach_flag"] = breach.astype(int)
         audit["ohlc_breach_rows"] = int(breach.sum())
-        # Repair recoverable breaches (high/low just not the extreme) rather than
-        # deleting the day; drop only the physically impossible high < low.
+        # Repair recoverable OHLC bounds and reject rows where high is below low.
         df.loc[breach, "high"] = df.loc[breach, price_cols].max(axis=1)
         df.loc[breach, "low"] = df.loc[breach, price_cols].min(axis=1)
         impossible = df["high"] < df["low"]
@@ -141,26 +106,26 @@ class DataCleaner:
             self.last_audit = {**audit, "status": "empty_after_validity"}
             return None
 
-        # -- missing data: short ffill only, long gaps = suspension (excluded) --
+        # Missing data: short forward-fill, long gaps excluded.
         df, gap_audit = self._handle_gaps(df, ticker)
         audit.update(gap_audit)
 
-        # -- corporate actions / splits (needs the executable series) --
+        # Corporate actions and splits.
         df, ca_audit = self._flag_corporate_actions(df, has_exec)
         audit.update(ca_audit)
 
-        # -- returns, extreme moves and robust outliers (flagged, never removed) --
+        # Returns, extreme moves and robust outliers are flagged only.
         df["daily_return"] = df["close"].pct_change()
         df["extreme_move_flag"] = (df["daily_return"].abs() > CLEANING["extreme_move"]).astype(int)
         df["outlier_flag"] = self._robust_outliers(df["daily_return"])
         audit["extreme_move_rows"] = int(df["extreme_move_flag"].sum())
         audit["outlier_rows"] = int(df["outlier_flag"].sum())
 
-        # -- penny stock flag --
+        # Penny stock flag.
         df["penny_stock_flag"] = (df["close"] < CLEANING["penny_price"]).astype(int)
         audit["penny_rows"] = int(df["penny_stock_flag"].sum())
 
-        # ensure every flag column exists (fill absent ones with 0)
+        # Add any absent flag columns as zero.
         for c in FLAG_COLS:
             if c not in df.columns:
                 df[c] = 0
@@ -207,7 +172,7 @@ class DataCleaner:
             if progress_cb is not None:
                 progress_cb(i, n)
 
-        # --- write the audit trail ---
+        # Write the audit trail.
         audit_df = pd.DataFrame(audits)
         audit_df.to_csv(self.audit_dir / "cleaning_audit.csv", index=False)
 
@@ -245,29 +210,13 @@ class DataCleaner:
             return None
         return pd.read_csv(path, index_col=0, parse_dates=True)
 
-    # ------------------------------------------------------------------ #
-    # internals
-    # ------------------------------------------------------------------ #
+    # Cleaning helpers.
     def _handle_gaps(self, df, ticker):
-        """Align to real exchange sessions, ffill only tiny gaps, exclude long gaps.
-
-        Using the exchange trading calendar (NYSE / SGX / LSE) is what lets us
-        distinguish three cases:
-          - a holiday          -> not a session at all, so never "missing";
-          - a short data gap    -> forward-filled (<= max_ffill_days) and flagged
-                                    imputed;
-          - a long gap / halt   -> the session exists but data is absent beyond
-                                    the fill limit, so the window is EXCLUDED and
-                                    its trailing edge flagged as a suspension.
-        No backward fill is ever applied. If the calendar library is unavailable
-        we degrade to filling only within-row NaNs (never inventing new rows).
-        """
+        """Align exchange sessions, fill short analytical gaps and exclude longer gaps."""
         limit = int(CLEANING["max_ffill_days"])
-        # Executable prices are never forward-filled: a missing session has no real
-        # trade price, so exec_close / close_unadj stay NaN and only the analytical
-        # columns are carried for feature continuity.
-        never_ffill = {"exec_close", "close_unadj"}
-        price_like = [c for c in df.columns if c != "volume" and c not in never_ffill]
+        # Leave missing execution prices unfilled; only analytical columns may carry forward.
+        unfilled_cols = {"exec_close", "close_unadj"}
+        price_like = [c for c in df.columns if c != "volume" and c not in unfilled_cols]
         sessions = self._sessions(ticker, df.index.min(), df.index.max())
 
         if sessions is None:
@@ -285,8 +234,7 @@ class DataCleaner:
                 "suspension_edges": 0,
             }
 
-        # Reindex onto real exchange sessions only. A source row on a non-session
-        # date (e.g. a bad weekday-holiday print) is dropped rather than carried.
+        # Align observations to exchange sessions and discard non-session rows.
         non_session_rows = int(df.index.difference(sessions).size)
         target = sessions
         df = df.reindex(target).sort_index()
@@ -325,28 +273,21 @@ class DataCleaner:
         return "XNYS"  # NYSE / US default
 
     def _sessions(self, ticker, start, end):
-        """Return the DatetimeIndex of valid exchange sessions, or None if the
-        calendar library is not installed / the calendar is unknown."""
+        """Return exchange sessions, or None when the calendar is unavailable."""
         return market_calendar.sessions(
             self._exchange_for(ticker), pd.Timestamp(start).date(), pd.Timestamp(end).date()
         )
 
     def _flag_corporate_actions(self, df, has_exec):
-        """Flag likely un-applied splits using the executable series.
-
-        A split shows up as a large one-day jump in the UNADJUSTED close close
-        to a common ratio (2:1, 3:1, ...), while the ADJUSTED close is roughly
-        continuous. If we only have adjusted prices we cannot make this check
-        and record zero suspected splits with a note.
-        """
+        """Flag suspected splits from raw-price jumps absent from adjusted prices."""
         df["potential_split_flag"] = 0
         df["corp_action_flag"] = 0
         if not has_exec or "exec_close" not in df.columns:
             return df, {"suspected_splits": 0, "split_check": "unavailable_no_executable_prices"}
 
-        # executable (raw) close jumps on an un-applied split...
+        # Raw close jumps on an unapplied split
         exec_ret = (df["exec_close"] / df["exec_close"].shift(1)).replace([np.inf, -np.inf], np.nan)
-        # ...while the adjusted analytical close stays continuous the same day.
+        # while the adjusted close stays continuous.
         adj_ret = (df["close"] / df["close"].shift(1)).replace([np.inf, -np.inf], np.nan)
 
         tol = CLEANING["split_tol"]
@@ -362,16 +303,12 @@ class DataCleaner:
 
     @staticmethod
     def _robust_outliers(returns: pd.Series) -> pd.Series:
-        """Flag returns that deviate from a rolling median by many rolling MADs.
-
-        Robust (median/MAD) statistics are used so that a single crash does not
-        inflate the threshold and mask the days around it. Flags only.
-        """
+        """Flag return deviations using a rolling median and median absolute deviation."""
         w = int(CLEANING["outlier_window"])
         k = float(CLEANING["outlier_mad_k"])
         med = returns.rolling(w, min_periods=w // 2).median()
         mad = (returns - med).abs().rolling(w, min_periods=w // 2).median()
-        # 1.4826 scales MAD to be comparable with a standard deviation
+        # 1.4826 scales MAD to a standard deviation
         scaled = 1.4826 * mad
         z = (returns - med).abs() / scaled.replace(0, np.nan)
         return (z > k).fillna(False).astype(int)

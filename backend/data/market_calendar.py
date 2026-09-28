@@ -1,12 +1,4 @@
-"""
-market_calendar.py
-
-One trading-calendar source for the whole system. Price-session alignment
-(cleaner), news and label decision dates (sentiment) and any horizon logic all
-resolve "what is a trading session" here, so they cannot drift onto different
-calendars. Every function degrades to None when pandas_market_calendars is not
-installed, and each caller already treats None as "calendar unavailable".
-"""
+"""Resolve exchange sessions and closing timestamps through a shared calendar."""
 
 import logging
 from functools import lru_cache
@@ -20,8 +12,7 @@ DEFAULT_EXCHANGE = "XNYS"
 
 @lru_cache(maxsize=64)
 def sessions(exchange, start, end):
-    """Trading-session dates (tz-naive, normalised) for [start, end] on `exchange`,
-    or None if the calendar library or exchange is unavailable."""
+    """Return normalised exchange-session dates, or None if unavailable."""
     try:
         import pandas_market_calendars as mcal
 
@@ -40,8 +31,7 @@ def sessions(exchange, start, end):
 
 @lru_cache(maxsize=64)
 def session_closes(year, exchange="NYSE"):
-    """Series of session ``market_close`` timestamps spanning `year` (plus early
-    January of the next year), or None if the calendar library is unavailable."""
+    """Return session closing timestamps for a year and the following January."""
     try:
         import pandas_market_calendars as mcal
 

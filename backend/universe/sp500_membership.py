@@ -1,31 +1,4 @@
-"""
-sp500_membership.py
-
-Point-in-time S&P 500 membership: using today's constituents throughout history
-would introduce survivorship bias, so membership is resolved per date.
-
-The class answers one question: *which tickers were in the S&P 500 on a given
-date?* It reads a snapshot history in the format published by the widely used
-fja05680/sp500 dataset:
-
-    date,tickers
-    2010-01-04,"A,AA,AAPL,ABC,..."
-    2010-01-29,"A,AAPL,ABC,..."
-    ...
-
-Each row is the full constituent list as of that date; membership on any query
-date is the most recent snapshot at or before it. From this we derive, for each
-ticker, its eligibility window (first_seen / last_seen), which is written to an
-audit file so every included security has a documented identity and eligibility
-date.
-
-Data source resolution order:
-  1. a local CSV at `data/universe/sp500_history.csv` (preferred, reproducible);
-  2. otherwise fetch from `SP500_HISTORY_URL` (env var) or the bundled default
-     and cache it locally;
-  3. if neither works, `degraded_current()` returns today's constituents with a
-     loud survivorship-bias warning recorded in the audit - never silently.
-"""
+"""Resolve historical S&P 500 membership from dated constituent snapshots."""
 
 import logging
 import os
@@ -37,10 +10,7 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-# fja05680/sp500 maintains a point-in-time components history (MIT licensed).
-# Its filename carries a date stamp that changes over time, so rather than pin a
-# brittle URL we resolve the current file via the GitHub contents API. An
-# explicit SP500_HISTORY_URL env var overrides this.
+# Resolve the dated history file from fja05680/sp500 (MIT), unless a URL is configured.
 ENV_HISTORY_URL = os.environ.get("SP500_HISTORY_URL")
 GH_CONTENTS_API = "https://api.github.com/repos/fja05680/sp500/contents/"
 FILE_PATTERN = re.compile(r"historical components.*changes.*\.csv$", re.I)
@@ -58,7 +28,7 @@ def _resolve_history_url():
         candidates = [f for f in r.json() if FILE_PATTERN.search(f.get("name", ""))]
         if not candidates:
             return None
-        # newest by name (the date stamp sorts chronologically enough for latest)
+        # newest by name; the date stamp sorts chronologically
         candidates.sort(key=lambda f: ("updated" in f["name"].lower(), f["name"]))
         return candidates[-1].get("download_url")
     except Exception as e:
@@ -78,17 +48,15 @@ class SP500Membership:
         self.data_dir = Path(data_dir)
         self.data_dir.mkdir(parents=True, exist_ok=True)
         self.local_path = self.data_dir / "sp500_history.csv"
-        self._snap = None  # cached snapshot frame: index=date, col 'members' (set)
+        self._snap = None  # cached snapshot frame indexed by date
 
-    # ------------------------------------------------------------------ #
     def snapshots(self, allow_fetch=True) -> pd.DataFrame:
-        """Return a DataFrame indexed by snapshot date with a 'members' column
-        holding the frozenset of normalized tickers as of that date."""
+        """Return date-indexed constituent snapshots containing normalised ticker sets."""
         if self._snap is not None:
             return self._snap
 
         raw = None
-        # a cached local file must be non-empty to count as usable
+        # Use a cached local file only when non-empty.
         if self.local_path.exists() and self.local_path.stat().st_size > 0:
             logger.info(f"Loading S&P 500 history from {self.local_path.name}")
             raw = pd.read_csv(self.local_path)
@@ -142,10 +110,7 @@ class SP500Membership:
         return normalize(ticker) in self.members_on(date, allow_fetch=allow_fetch)
 
     def eligibility_table(self, allow_fetch=True) -> pd.DataFrame:
-        """Per-ticker first_seen / last_seen / still_member from the snapshots.
-
-        Written to `sp500_membership_audit.csv` by `write_audit`.
-        """
+        """Return each ticker's first and last observed membership dates and current status."""
         snap = self.snapshots(allow_fetch=allow_fetch)
         first, last = {}, {}
         for d, row in snap.iterrows():
@@ -173,18 +138,13 @@ class SP500Membership:
         return out
 
     def eligible_between(self, start, end, allow_fetch=True) -> list:
-        """Every ticker that was a member at any point within [start, end].
-
-        This is the correct universe for a historical backtest window: a stock
-        that left the index mid-window still belongs in the study for the period
-        it was a member, and one that joined mid-window is included from then.
-        """
+        """Return all tickers with membership during the requested interval."""
         snap = self.snapshots(allow_fetch=allow_fetch)
         s, e = pd.Timestamp(start), pd.Timestamp(end)
         if e > snap.index.max() + pd.Timedelta(days=90):
             raise ValueError(f"Membership history ends {snap.index.max().date()}; requested end is {e.date()}")
         window = snap[(snap.index >= s) & (snap.index <= e)]
-        # include the snapshot in force at `start` too
+        # Include the snapshot in force at start.
         prior = snap.index[snap.index <= s]
         seen = set()
         if len(prior):
@@ -193,14 +153,8 @@ class SP500Membership:
             seen |= set(row["members"])
         return sorted(seen)
 
-    # ------------------------------------------------------------------ #
     def degraded_current(self, tickers) -> dict:
-        """Fallback: treat a supplied current constituent list as the universe.
-
-        Returns an audit dict that RECORDS the survivorship bias rather than
-        hiding it, so a run that had to fall back is never mistaken for a
-        point-in-time study.
-        """
+        """Record a current-member fallback and its survivorship-bias limitation."""
         logger.warning("Using CURRENT constituents - results carry survivorship bias.")
         return {
             "mode": "degraded_current_constituents",

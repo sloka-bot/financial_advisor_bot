@@ -8,7 +8,7 @@ from pydantic import BaseModel, Field, field_validator, model_validator
 VALID_PROFILES = {"conservative", "moderate", "aggressive"}
 
 
-def _norm_profile(v: str) -> str:
+def _normalize_risk_profile(v: str) -> str:
     """Validate/normalise a risk profile to one of the three supported tiers."""
     v = (v or "moderate").strip().lower()
     if v not in VALID_PROFILES:
@@ -27,8 +27,8 @@ class RunRequest(BaseModel):
 
     @field_validator("risk_profile")
     @classmethod
-    def _vp(cls, v):
-        return _norm_profile(v)
+    def validate_risk_profile(cls, v):
+        return _normalize_risk_profile(v)
 
 
 class ChatRequest(BaseModel):
@@ -53,8 +53,8 @@ class ProfileRequest(BaseModel):
 
     @field_validator("risk_profile")
     @classmethod
-    def _vp(cls, v):
-        return _norm_profile(v)
+    def validate_risk_profile(cls, v):
+        return _normalize_risk_profile(v)
 
 
 class ImportHoldingItem(BaseModel):
@@ -85,6 +85,19 @@ class ApprovalRequest(BaseModel):
     rec_id: int
 
 
+class BuyRequest(BaseModel):
+    """Request a whole-share addition to a saved holding."""
+
+    ticker: str = Field(min_length=1, max_length=12, pattern=r"^[A-Za-z0-9.^-]+$")
+    shares: int = Field(gt=0, strict=True)
+
+
+class SellRequest(BaseModel):
+    """Identify a held ticker to sell from the saved portfolio."""
+
+    ticker: str
+
+
 class ProfileUpdateRequest(BaseModel):
     """Validate only the profile fields supplied for an update."""
 
@@ -99,12 +112,11 @@ class ProfileUpdateRequest(BaseModel):
     @classmethod
     def validate_profile(cls, value):
         """Validate a supplied risk tier while preserving an omitted value."""
-        return _norm_profile(value) if value is not None else value
+        return _normalize_risk_profile(value) if value is not None else value
 
 
 class PortfolioRequest(BaseModel):
-    """Typed body for /api/portfolio and /api/recommendations (was an untyped dict,
-    which allowed an arbitrary profile string and a non-positive budget)."""
+    """Validate risk profile and budget for portfolio and recommendation requests."""
 
     risk_profile: str = "moderate"
     budget: float = Field(10000.0, gt=0, allow_inf_nan=False)
@@ -113,8 +125,8 @@ class PortfolioRequest(BaseModel):
 
     @field_validator("risk_profile")
     @classmethod
-    def _vp(cls, v):
-        return _norm_profile(v)
+    def validate_risk_profile(cls, v):
+        return _normalize_risk_profile(v)
 
 
 Ticker = Annotated[str, Field(pattern=r"^[A-Za-z0-9][A-Za-z0-9.\-]{0,14}$")]

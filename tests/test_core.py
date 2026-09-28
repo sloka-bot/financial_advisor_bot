@@ -1,17 +1,4 @@
-"""
-tests/test_core.py
-
-Unit tests for the core ML pipeline components.
-
-Run:
-    cd financial_advisor_bot
-    python -m pytest tests/ -v
-
-These tests use synthetic data to verify component behaviour without
-requiring a full pipeline run. They cover the critical failure modes
-identified during development: feature alignment, label leakage, and
-signal generation correctness.
-"""
+"""Unit tests for core pipeline components on synthetic data."""
 
 import sys
 import unittest
@@ -24,7 +11,7 @@ sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 
 def _synthetic_ohlcv(n: int = 300) -> pd.DataFrame:
-    """Generate n rows of realistic-looking OHLCV data for testing."""
+    """Generate n rows of synthetic OHLCV data."""
     rng = np.random.default_rng(42)
     close = 100 + np.cumsum(rng.normal(0, 1, n))
     close = np.maximum(close, 5)
@@ -52,22 +39,18 @@ class TestFeatureEngineer(unittest.TestCase):
     def test_output_drops_only_indicator_warmup(self):
         feat = self.eng.generate("TEST", self.data.copy(), save=False)
         self.assertIsNotNone(feat, "generate() returned None")
-        # generate() drops the rows before the 200-day SMA converges - the model
-        # must never see uninitialised indicators. So the output is non-empty,
-        # never longer than the input, and only the ~199-row warmup is removed.
+        # Output drops only the SMA200 warm-up rows.
         self.assertGreater(len(feat), 0)
         self.assertLessEqual(len(feat), len(self.data))
         self.assertGreaterEqual(len(feat), len(self.data) - 205)
 
-    def test_no_target_leakage_in_columns(self):
+    def test_target_columns_not_features(self):
         feat = self.eng.generate("TEST", self.data.copy(), save=False)
         for col in ("target_return", "target_direction"):
-            # these labels should NOT be usable as features
-            # (they may exist as metadata columns but must be excluded by models)
+            # Labels may exist as metadata columns.
             if col in feat.columns:
-                pass  # presence is acceptable; exclusion is the model's job
-        # the critical check: daily_return should be the current day's return
-        # (shift(-1) would be the label - verify it is not precomputed as a feature)
+                pass
+        # No precomputed next-day return column.
         self.assertNotIn("next_day_return", feat.columns)
 
     def test_key_indicators_present(self):
@@ -102,9 +85,7 @@ class TestXGBoostForecaster(unittest.TestCase):
         self.assertIn("target_direction", self.EXCLUDED, "target_direction must be in EXCLUDED - it IS the label")
 
     def test_train_runs_walkforward_and_auc_is_plausible(self):
-        # Enough multi-year data that the walk-forward folds actually run, so the
-        # reported AUC is a real out-of-sample estimate (not the None returned when
-        # there is too little data to validate).
+        # Enough history for the walk-forward folds to run.
         from backend.data.feature_engineer import FeatureEngineer
 
         eng = FeatureEngineer()
@@ -119,15 +100,13 @@ class TestXGBoostForecaster(unittest.TestCase):
         self.assertLess(auc, 0.90, "AUC > 0.90 on random data suggests label leakage")
 
     def test_train_reports_none_auc_when_no_walkforward(self):
-        # Too little data to validate: the result is auc=None / cv_ran=False,
-        # never a placeholder 0.5 that could be mistaken for a real score.
+        # Too little data gives auc=None and cv_ran=False.
         result = self.model.train(self.feat.tail(200))
         self.assertFalse(result.get("cv_ran", False))
         self.assertIsNone(result.get("cv_auc_mean"))
 
     def test_predict_proba_up_in_range(self):
-        # XGBoost is a direction classifier: it returns P(rise) in [0, 1],
-        # not a return (the pseudo-return conversion was removed).
+        # The classifier returns P(rise) in [0, 1].
         self.model.train(self.feat.tail(200))
         p = self.model.predict_proba_up(self.feat)
         self.assertIsNotNone(p)
@@ -161,8 +140,7 @@ class TestRegimeDetector(unittest.TestCase):
         self.assertEqual(result["regime"], "unknown")
 
 
-# Signal and Sharpe logic lives in backend/evaluation/experiments.py, exercised
-# by scripts/run_experiments.py and the leakage checks in tests/test_no_leakage.py.
+# Rule signals from backend/evaluation/experiments.py.
 class TestExperimentSignals(unittest.TestCase):
     def test_technical_rule_buy(self):
         from backend.evaluation.experiments import technical_rule_signal
@@ -178,7 +156,7 @@ class TestExperimentSignals(unittest.TestCase):
 
 
 class TestUniverseBuilder(unittest.TestCase):
-    """This project is S&P 500 (US) only - the universe has no other markets."""
+    """The universe contains S&P 500 tickers only."""
 
     def test_only_sp500_us(self):
         from backend.universe.universe_builder import UniverseBuilder
@@ -192,7 +170,7 @@ class TestUniverseBuilder(unittest.TestCase):
 
         members = UniverseBuilder().members()
         self.assertTrue(len(members) > 0)
-        # normalized tickers use '-' not '.', and there are no foreign suffixes
+        # Normalised tickers use '-' and have no foreign suffixes.
         self.assertFalse(any("." in t for t in members), "no foreign-exchange suffixes allowed")
 
 

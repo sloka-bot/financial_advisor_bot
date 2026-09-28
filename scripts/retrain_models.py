@@ -1,19 +1,4 @@
-"""
-retrain_models.py
-
-Retrain the deployed models (XGBoost + LSTM) on the EXISTING fused master datasets,
-under the current code, without re-downloading, re-cleaning or re-scoring sentiment.
-Use this to regenerate the model artifacts after code changes while preserving the
-exact feature/sentiment corpus the report was built on.
-
-It regenerates: models/xgboost/{model.pkl, scaler.pkl, feat_cols.pkl, calibrated.pkl,
-artifact_manifest.json}, models/lstm/{model.pt, meta.pkl} (now with feature_names +
-compatibility fingerprint) and models/registry.json (new schema).
-
-Run:
-    ./venv/bin/python scripts/retrain_models.py
-    ./venv/bin/python scripts/retrain_models.py --limit 10   # quick smoke test
-"""
+"""Retrain the deployed XGBoost and LSTM models on the existing master datasets."""
 
 import argparse
 import logging
@@ -47,19 +32,23 @@ def main():
         "--respect-gate",
         action="store_true",
         help="on a full run, obey the registry AUC deploy-gate instead of force-deploying "
-             "the freshly trained full model (default: force-deploy the canonical model)",
+        "the freshly trained full model (default: force-deploy the canonical model)",
     )
     ap.add_argument("--start", default="2010-01-01", help="earliest master date to train on")
     ap.add_argument(
         "--end",
         default="2023-12-31",
         help="latest master date to train on (FNSPID news-window end; matches the report "
-             "and the --end default of the evaluation scripts)",
+        "and the --end default of the evaluation scripts)",
     )
-    ap.add_argument("--skip-lstm", action="store_true",
-                    help="train/deploy XGBoost only; run scripts/retrain_lstm.py for a fast LSTM")
-    ap.add_argument("--lstm-batch-size", type=int, default=256,
-                    help="LSTM batch size (larger = fewer steps per epoch = faster)")
+    ap.add_argument(
+        "--skip-lstm",
+        action="store_true",
+        help="train/deploy XGBoost only; run scripts/retrain_lstm.py for a fast LSTM",
+    )
+    ap.add_argument(
+        "--lstm-batch-size", type=int, default=256, help="LSTM batch size (larger = fewer steps per epoch = faster)"
+    )
     args = ap.parse_args()
 
     set_seed(42)
@@ -77,21 +66,16 @@ def main():
         logger.error("No usable master data loaded")
         sys.exit(1)
 
-    # Cap the training window to the news-covered period so the deployed model,
-    # the evaluation scripts (which default to the same --end) and the report all
-    # describe one 2010-2023 window. Training past the FNSPID news end would learn
-    # on newsless rows the report does not describe.
+    # Cap training at the end of the news-covered 2010-2023 window.
     import pandas as _pd
-    combined = combined.loc[
-        (combined.index >= _pd.Timestamp(args.start)) & (combined.index <= _pd.Timestamp(args.end))
-    ]
+
+    combined = combined.loc[(combined.index >= _pd.Timestamp(args.start)) & (combined.index <= _pd.Timestamp(args.end))]
     if combined.empty:
         logger.error("No rows in [%s, %s]", args.start, args.end)
         sys.exit(1)
     logger.info("Date-capped to [%s, %s]: %d rows", args.start, args.end, len(combined))
 
-    # Point-in-time membership per row - the deployed training path is strict so it
-    # cannot train on a survivorship-biased set (needs data/universe/sp500_history.csv).
+    # Filter rows by point-in-time membership.
     if not args.no_strict_universe:
         combined = UniverseBuilder().filter_eligible_rows(combined, strict=True)
     logger.info("Training on %d rows across %d tickers", len(combined), combined["ticker"].nunique())
@@ -104,12 +88,12 @@ def main():
             args.limit,
         )
     logger.info("Training XGBoost...")
-    xgb_res = XGBoostForecaster().train(
-        combined, persist=not smoke, force_deploy=(not smoke and not args.respect_gate)
-    )
+    xgb_res = XGBoostForecaster().train(combined, persist=not smoke, force_deploy=(not smoke and not args.respect_gate))
     logger.info(
         "XGBoost: cv_auc_mean=%s cv_direction_acc=%s deployed=%s",
-        xgb_res.get("cv_auc_mean"), xgb_res.get("cv_direction_acc"), xgb_res.get("deployed"),
+        xgb_res.get("cv_auc_mean"),
+        xgb_res.get("cv_direction_acc"),
+        xgb_res.get("deployed"),
     )
 
     if args.skip_lstm:

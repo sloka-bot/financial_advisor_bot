@@ -1,19 +1,4 @@
-"""
-test_regime_hmm.py
-
-The live regime detector is a Gaussian HMM. These tests pin the behaviour that
-matters for the portfolio gate:
-
-  * a sustained up-market reads bull, a sustained down-market reads bear, a flat
-    market reads sideways;
-  * the two switches that actually drive conservatism - a bull market that
-    crashes, and a bear market that recovers - are detected on the recent window;
-  * when hmmlearn can't run or there is too little history, it falls back to the
-    cross-sectional heuristic rather than failing.
-
-Determinism: GaussianHMM uses random_state=42 and the synthetic series use fixed
-seeds, so these assertions are reproducible.
-"""
+"""Gaussian HMM regime detection and heuristic fallback behaviour."""
 
 import unittest
 
@@ -37,7 +22,7 @@ class TestHMMRegime(unittest.TestCase):
         return r
 
     def test_sustained_bull(self):
-        d = np.random.default_rng(2).normal(0.0012, 0.007, 800)  # up, low vol
+        d = np.random.default_rng(2).normal(0.0012, 0.007, 800)  # up, low volatility
         self.assertEqual(self._regime(d)["regime"], "bull")
 
     def test_mild_bull(self):
@@ -45,7 +30,7 @@ class TestHMMRegime(unittest.TestCase):
         self.assertEqual(self._regime(d)["regime"], "bull")
 
     def test_sustained_bear(self):
-        d = np.random.default_rng(6).normal(-0.0009, 0.013, 800)  # down, elevated vol
+        d = np.random.default_rng(6).normal(-0.0009, 0.013, 800)  # down, elevated volatility
         self.assertEqual(self._regime(d)["regime"], "bear")
 
     def test_flat_is_sideways(self):
@@ -89,7 +74,7 @@ class TestHeuristicFallback(unittest.TestCase):
         self.assertIn(r["regime"], {"bull", "bear", "sideways", "unknown"})
 
     def test_adx_gates_direction_in_heuristic(self):
-        # strong breadth but WEAK trend (low ADX) must not be called directional
+        # Strong breadth with low ADX is not directional.
         idx = pd.bdate_range("2023-01-02", periods=5)
         weak = {
             f"T{i}": pd.DataFrame(

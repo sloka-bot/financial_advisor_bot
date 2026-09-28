@@ -44,7 +44,16 @@ def test_chat_without_models_or_ollama_does_not_crash(client, monkeypatch):
         assert response.status_code == 200
         assert response.json()["source"] == "template"
     prompt = chat_router.build_chat_prompt(ChatRequest(message="Is return 999?", user_id="test"))
-    assert not chat_router._numbers_grounded("Your return is 999%.", prompt)
+    assert not chat_router._reply_numbers_supported("Your return is 999%.", prompt)
+    isolated = '<verified_data>{"price": 3}</verified_data>'
+    assert not chat_router._reply_numbers_supported("The price is $300.", isolated)
+    assert not chat_router._reply_numbers_supported("Sharpe is 987.", isolated)
+    assert not chat_router._reply_numbers_supported("The price is $3,000.", isolated)
+    assert chat_router._reply_numbers_supported("The price is $3.00.", isolated)
+    from backend.explain.explainer import Explainer
+
+    assert not Explainer._validate_numeric_claims("The price is $300.", "price: 3")[0]
+    assert not Explainer._validate_numeric_claims("Sharpe is 987.", "price: 3")[0]
 
 
 def test_no_models_returns_actionable_error(client):
@@ -75,7 +84,7 @@ def test_corrupt_store_remains_refused_on_second_read(tmp_path, monkeypatch):
     assert path.read_text() == "{broken"
 
 
-def test_execution_price_never_uses_adjusted_close():
+def test_execution_price_uses_raw_close():
     assert executable_price(pd.DataFrame({"close": [100]})) is None
     assert executable_price(pd.DataFrame({"close": [100], "exec_close": [np.nan], "close_unadj": [120]})) == 120
 
@@ -217,3 +226,147 @@ def test_chat_model_question_explains_models_without_ollama(client, monkeypatch)
     reply = response.json()["reply"]
     assert "XGBoost" in reply and "LSTM" in reply and "21 trading sessions" in reply
     assert "can be wrong" in reply
+
+
+def test_repeated_profile_creation_does_not_reset_saved_account(client):
+    client.post("/api/user/test", json={"budget": 10000, "risk_profile": "conservative"})
+    runtime.user_store.update_portfolio("test", [{"ticker": "AAPL", "shares": 2, "price": 100}], 9800)
+    runtime.user_store.add_recommendations("test", [{"ticker": "MSFT", "action": "BUY"}])
+    before = runtime.user_store.get("test")
+    response = client.post("/api/user/test", json={"budget": 500})
+    assert response.status_code == 200
+    assert runtime.user_store.get("test") == before
+
+
+def test_invalid_import_preserves_saved_holdings(client):
+    client.post("/api/user/test", json={"budget": 10000})
+    runtime.user_store.update_portfolio("test", [{"ticker": "AAPL", "shares": 2, "price": 100}], 9800)
+    before = runtime.user_store.get("test")
+    response = client.post(
+        "/api/user/test/import-portfolio",
+        json={"user_id": "test", "holdings": [{"ticker": "MSFT", "shares": 1000, "price": 100}]},
+    )
+    assert response.status_code == 400
+    assert runtime.user_store.get("test") == before
+
+
+def test_recommendation_queue_keeps_all_eligible_signals_without_promoting_hold(client, monkeypatch):
+    client.post("/api/user/test", json={"budget": 10000})
+    tickers = ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "GGG"]
+    signals = [{"ticker": t, "signal": "BUY", "composite_score": 100 - i} for i, t in enumerate(tickers)]
+    signals += [dict(signals[0]), {"ticker": "HOLD", "signal": "HOLD"}]
+    monkeypatch.setattr(runtime.universe_builder, "members", lambda: tickers + ["HOLD"])
+    monkeypatch.setattr(runtime, "collect_predictions", lambda *a, **k: ({t: {} for t in tickers}, {}))
+    monkeypatch.setattr(runtime.ranker, "rank", lambda *a: None)
+    monkeypatch.setattr(runtime.recommender, "recommend", lambda *a, **k: {"all_signals": signals})
+    monkeypatch.setattr(
+        runtime.portfolio_manager,
+        "apply_recommendation",
+        lambda rec, *a, **k: {"error": "unaffordable"} if rec["ticker"] == "GGG" else {"respects_profile": True},
+    )
+    monkeypatch.setattr(runtime.portfolio_manager, "confidence_score", lambda *a, **k: {"overall": 50, "factors": {}})
+    monkeypatch.setattr(runtime.portfolio_manager, "_buy_reason", lambda *a: "Forecast meets threshold")
+    monkeypatch.setattr(runtime.drift_monitor, "log_recommendation", lambda **k: None)
+    runtime.queue_recommendations("test", tickers + ["HOLD"], "moderate", 10000)
+    pending = runtime.user_store.get("test")["pending_recommendations"]
+    assert [r["ticker"] for r in pending] == tickers[:6]
+    runtime.user_store.reject_recommendation("test", pending[0]["id"])
+    remaining = runtime.user_store.get("test")["pending_recommendations"]
+    assert [r["ticker"] for r in remaining[:3]] == tickers[1:4]
+
+
+def _review_prices(monkeypatch):
+    frame = pd.DataFrame({"exec_close": [10.0], "close": [10.0]}, index=[pd.Timestamp.today().normalize()])
+    monkeypatch.setattr(runtime.fusion, "load_master", lambda ticker: frame)
+    return frame
+
+
+def test_manual_buy_and_sell_charge_fees_and_preserve_cash_after_exit(client, monkeypatch):
+    _review_prices(monkeypatch)
+    client.post("/api/user/test", json={"budget": 1000})
+    runtime.user_store.update_portfolio("test", [{"ticker": "AAA", "shares": 10, "price": 10, "total_cost": 100}], 900)
+    bought = client.post("/api/user/test/buy", json={"ticker": "AAA", "shares": 2})
+    assert bought.status_code == 200
+    assert bought.json()["cash"] == pytest.approx(879.98)
+    assert bought.json()["holdings"][0]["shares"] == 12
+    sold = client.post("/api/user/test/sell", json={"ticker": "AAA"})
+    assert sold.status_code == 200
+    assert sold.json()["proceeds"] == pytest.approx(119.88)
+    assert sold.json()["cash"] == pytest.approx(999.86)
+    client.put("/api/user/test", json={"budget": 1000})
+    assert runtime.user_store.get("test")["portfolio"]["cash"] == pytest.approx(999.86)
+
+
+def test_manual_trade_rejects_missing_price_and_excess_quantity(client, monkeypatch):
+    client.post("/api/user/test", json={"budget": 1000})
+    runtime.user_store.update_portfolio("test", [{"ticker": "AAA", "shares": 10, "price": 10, "total_cost": 100}], 900)
+    before = runtime.user_store.get("test")
+    assert client.post("/api/user/test/sell", json={"ticker": "AAA"}).status_code == 409
+    _review_prices(monkeypatch)
+    assert client.post("/api/user/test/buy", json={"ticker": "AAA", "shares": 100}).status_code == 409
+    assert runtime.user_store.get("test") == before
+
+
+def test_build_reconciles_fees_and_checks_whole_book(client, monkeypatch):
+    from backend.api.routers import users
+
+    frame = _review_prices(monkeypatch)
+    client.post("/api/user/test", json={"budget": 1000})
+    runtime.user_store.update_portfolio("test", [{"ticker": "AAA", "shares": 24, "price": 10, "total_cost": 240}], 760)
+    monkeypatch.setitem(runtime.pipeline_state, "processed_tickers", ["AAA", "BBB"])
+    monkeypatch.setattr(runtime, "collect_predictions", lambda *a: ({}, {"AAA": frame, "BBB": frame}))
+    monkeypatch.setattr(
+        users,
+        "build_markowitz_portfolio",
+        lambda *a, **k: {
+            "portfolio": {
+                "holdings": [{"ticker": "AAA", "shares": 10}, {"ticker": "BBB", "shares": 5}],
+                "available": True,
+            }
+        },
+    )
+    res = client.post("/api/user/test/build").json()
+    assert res["built"] == 1
+    assert res["cash"] == pytest.approx(709.95)
+    assert sum(h["shares"] * 10 for h in res["holdings"]) + res["fees"] + res["cash"] == pytest.approx(1000)
+    assert max(h["shares"] * 10 / (1000 - res["fees"]) for h in res["holdings"]) <= 0.25
+
+
+def test_build_does_not_overwrite_concurrent_portfolio_change(client, monkeypatch):
+    from backend.api.routers import users
+
+    frame = _review_prices(monkeypatch)
+    client.post("/api/user/test", json={"budget": 1000})
+    monkeypatch.setitem(runtime.pipeline_state, "processed_tickers", ["AAA"])
+    monkeypatch.setattr(runtime, "collect_predictions", lambda *a: ({}, {"AAA": frame}))
+
+    def changed(*a, **k):
+        runtime.user_store.update_portfolio(
+            "test", [{"ticker": "BBB", "shares": 1, "price": 10, "total_cost": 10}], 990
+        )
+        return {"portfolio": {"holdings": [{"ticker": "AAA", "shares": 1}]}}
+
+    monkeypatch.setattr(users, "build_markowitz_portfolio", changed)
+    assert client.post("/api/user/test/build").status_code == 409
+    assert runtime.user_store.get("test")["portfolio"]["holdings"][0]["ticker"] == "BBB"
+
+
+def test_generate_rotates_visible_candidates_without_converting_hold(client, monkeypatch):
+    client.post("/api/user/test", json={"budget": 1000})
+    tickers = ["AAA", "BBB", "CCC", "DDD", "EEE", "FFF", "HOLD"]
+    signals = [{"ticker": t, "signal": "BUY", "composite_score": 100 - i} for i, t in enumerate(tickers[:-1])]
+    signals.append({"ticker": "HOLD", "signal": "HOLD", "composite_score": 99})
+    monkeypatch.setattr(runtime.universe_builder, "members", lambda: tickers)
+    monkeypatch.setattr(runtime, "collect_predictions", lambda *a, **k: ({t: {} for t in tickers}, {}))
+    monkeypatch.setattr(runtime.ranker, "rank", lambda *a: None)
+    monkeypatch.setattr(runtime.recommender, "recommend", lambda *a, **k: {"all_signals": signals})
+    monkeypatch.setattr(runtime.portfolio_manager, "apply_recommendation", lambda *a, **k: {"respects_profile": True})
+    monkeypatch.setattr(runtime.portfolio_manager, "confidence_score", lambda *a, **k: {"overall": 50, "factors": {}})
+    monkeypatch.setattr(runtime.portfolio_manager, "_buy_reason", lambda *a: "Meets thresholds")
+    monkeypatch.setattr(runtime.drift_monitor, "log_recommendation", lambda **k: None)
+    runtime.queue_recommendations("test", tickers, "moderate", 1000)
+    first = runtime.user_store.get("test")["pending_recommendations"]
+    assert len(first) == 6
+    runtime.queue_recommendations("test", tickers, "moderate", 1000)
+    second = runtime.user_store.get("test")["pending_recommendations"]
+    assert [r["ticker"] for r in second] == ["DDD", "EEE", "FFF"]

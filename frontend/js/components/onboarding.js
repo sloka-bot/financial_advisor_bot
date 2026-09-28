@@ -1,9 +1,4 @@
-/*
- * Onboarding questionnaire - shown once per user, never again.
- * First asks: create a new portfolio or import an existing one.
- * Stores risk profile, goal, horizon, and budget to the backend.
- * Returning users skip onboarding and go straight to the dashboard.
- */
+/* Onboarding questionnaire for new users: create or import a portfolio. */
 
 const ONBOARDING_STEPS = [
   {
@@ -15,48 +10,15 @@ const ONBOARDING_STEPS = [
     options: [
       {
         value: "create",
-        icon: "✨",
+        icon: "\u2728",
         label: "Build new portfolio",
         desc: "Review model signals and a portfolio proposal constrained by your risk profile.",
       },
       {
         value: "import",
-        icon: "📂",
+        icon: "\ud83d\udcc2",
         label: "Import existing portfolio",
         desc: "Enter your current holdings and we will analyse and optimise them",
-      },
-    ],
-  },
-  {
-    id: "goal",
-    title: "What's your investment goal?",
-    subtitle:
-      "Recorded as a preference. Allocation currently uses your selected risk tolerance.",
-    type: "cards",
-    options: [
-      {
-        value: "growth",
-        icon: "📈",
-        label: "Growth",
-        desc: "Maximise long-term capital appreciation",
-      },
-      {
-        value: "income",
-        icon: "💰",
-        label: "Income",
-        desc: "Generate steady dividend and interest income",
-      },
-      {
-        value: "preservation",
-        icon: "🛡️",
-        label: "Preservation",
-        desc: "Protect capital with minimal volatility",
-      },
-      {
-        value: "balanced",
-        icon: "⚖️",
-        label: "Balanced",
-        desc: "Equal mix of growth and stability",
       },
     ],
   },
@@ -68,54 +30,21 @@ const ONBOARDING_STEPS = [
     options: [
       {
         value: "conservative",
-        icon: "🌱",
+        icon: "\ud83c\udf31",
         label: "Conservative",
         desc: "I'd sell immediately - capital safety comes first",
       },
       {
         value: "moderate",
-        icon: "🌿",
+        icon: "\ud83c\udf3f",
         label: "Moderate",
         desc: "I'd hold and wait for recovery",
       },
       {
         value: "aggressive",
-        icon: "🌳",
+        icon: "\ud83c\udf33",
         label: "Aggressive",
         desc: "I'd buy more - this is a buying opportunity",
-      },
-    ],
-  },
-  {
-    id: "horizon",
-    title: "What's your investment horizon?",
-    subtitle:
-      "Recorded as a preference; model forecasts cover 21 trading sessions.",
-    type: "cards",
-    options: [
-      {
-        value: "< 1 year",
-        icon: "⚡",
-        label: "Short term",
-        desc: "Less than 1 year",
-      },
-      {
-        value: "1-5 years",
-        icon: "📅",
-        label: "Medium term",
-        desc: "1 to 5 years",
-      },
-      {
-        value: "5-10 years",
-        icon: "🗓️",
-        label: "Long term",
-        desc: "5 to 10 years",
-      },
-      {
-        value: "10+ years",
-        icon: "🏦",
-        label: "Very long term",
-        desc: "More than 10 years",
       },
     ],
   },
@@ -138,12 +67,23 @@ function initOnboarding(newUserId, isNew) {
   showOnboarding();
 }
 
-// Open the onboarding popup directly in IMPORT mode (used by the "Import
-// portfolio" buttons, which otherwise called initOnboarding(..., false) - a no-op).
-function openImport(newUserId) {
+// Import starts with the saved profile values.
+async function openImport(newUserId) {
   userId = newUserId;
   currentStep = 0;
-  answers = { portfolio_type: "import" };
+  const profile = await api.getUser(newUserId).catch(() => null);
+  if (!profile?.exists) {
+    toast("Please create a profile before importing holdings", "error");
+    return;
+  }
+  answers = {
+    portfolio_type: "import",
+    risk: profile.risk_profile,
+    budget: profile.budget,
+    goal: profile.goal,
+    horizon: profile.investment_horizon,
+    monthly_contribution: profile.monthly_contribution,
+  };
   importMode = true;
   importRows = [{ ticker: "", shares: "", price: "" }];
   showOnboarding();
@@ -162,7 +102,13 @@ function showOnboarding() {
   paintStep();
 }
 
-// Render the current onboarding question into the overlay panel
+// Close the onboarding overlay without completing it.
+function closeOnboarding() {
+  const overlay = document.getElementById("onboarding-overlay");
+  if (overlay) overlay.style.display = "none";
+}
+
+// Render the current onboarding question.
 function paintStep() {
   const step = ONBOARDING_STEPS[currentStep];
   const overlay = document.getElementById("onboarding-overlay");
@@ -170,7 +116,8 @@ function paintStep() {
   const pct = Math.round((currentStep / ONBOARDING_STEPS.length) * 100);
 
   overlay.innerHTML = `
-    <div style="background:var(--bg-card);border:1px solid var(--border-hi);border-radius:var(--r-xl);padding:36px 40px;width:560px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg)">
+    <div style="position:relative;background:var(--bg-card);border:1px solid var(--border-hi);border-radius:var(--r-xl);padding:36px 40px;width:560px;max-height:90vh;overflow-y:auto;box-shadow:var(--shadow-lg)">
+      <button onclick="closeOnboarding()" aria-label="Close" title="Close" style="position:absolute;top:12px;right:14px;background:none;border:none;color:var(--txt-3);font-size:24px;cursor:pointer;line-height:1;z-index:1">&times;</button>
 
       <!-- progress bar -->
       <div style="margin-bottom:28px">
@@ -214,7 +161,7 @@ function paintStep() {
     </div>`;
 }
 
-// Build the large selectable cards used for portfolio type and training scope
+// Build the large cards for portfolio type and training scope.
 function buildChoiceCards(step) {
   return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">
     ${step.options
@@ -232,7 +179,7 @@ function buildChoiceCards(step) {
   </div>`;
 }
 
-// Build the smaller option cards used for risk, goal, and horizon
+// Build the option cards for risk, goal and horizon.
 function buildOptionCards(step) {
   return `<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
     ${step.options
@@ -250,17 +197,13 @@ function buildOptionCards(step) {
   </div>`;
 }
 
-// Render the budget and monthly contribution input fields
+// Render the budget and monthly contribution fields.
 function buildBudgetForm() {
   return `
     <div style="display:flex;flex-direction:column;gap:16px">
       <div>
         <label class="field-label">Starting investment ($)</label>
         <input id="ob-budget" class="field-input" type="number" value="${answers.budget || 10000}" min="500" step="500"/>
-      </div>
-      <div>
-        <label class="field-label">Monthly contribution ($) - optional</label>
-        <input id="ob-monthly" class="field-input" type="number" value="${answers.monthly_contribution || 0}" min="0"/>
       </div>
     </div>`;
 }
@@ -328,10 +271,10 @@ function captureImportRows() {
 function selectCard(stepId, value, el) {
   answers[stepId] = value;
 
-  // Reflect the choice in import mode flag
+  // Record the import choice.
   if (stepId === "portfolio_type") {
     importMode = value === "import";
-    paintStep(); // repaint to show/hide import form
+    paintStep(); // Repaint to show or hide the import form.
     return;
   }
 
@@ -344,7 +287,7 @@ function selectCard(stepId, value, el) {
   el.style.borderColor = "var(--green)";
 }
 
-// Validate the current step answer then advance to the next question
+// Validate the current answer and advance.
 function stepForward() {
   const step = ONBOARDING_STEPS[currentStep];
 
@@ -380,7 +323,7 @@ function stepForward() {
   paintStep();
 }
 
-// Go back to the previous step without clearing the current answer
+// Go back one step, keeping the current answer.
 function stepBack() {
   if (currentStep > 0) {
     currentStep--;
@@ -388,7 +331,7 @@ function stepBack() {
   }
 }
 
-// Save the completed questionnaire to the backend and sync the sidebar
+// Save the questionnaire and sync the sidebar.
 async function submitOnboarding() {
   const btn = document.getElementById("ob-next");
   if (btn) {
@@ -397,8 +340,9 @@ async function submitOnboarding() {
   }
 
   try {
-    // 1. Save profile
-    await api.createUser(userId, {
+    const existing = await api.getUser(userId);
+    const saveProfile = existing.exists ? api.updateUser : api.createUser;
+    await saveProfile(userId, {
       risk_profile: answers.risk || "moderate",
       goal: answers.goal || "growth",
       investment_horizon: answers.horizon || "5-10 years",
@@ -408,7 +352,7 @@ async function submitOnboarding() {
       index: "S&P 500",
     });
 
-    // 2. If importing, send holdings to backend
+    // Send imported holdings to the backend.
     if (importMode) {
       const holdings = importRows
         .filter(
@@ -426,7 +370,7 @@ async function submitOnboarding() {
       }
     }
 
-    // 3. Update sidebar state from onboarding answers
+    // Update sidebar state from the answers.
     state.risk = answers.risk || "moderate";
     state.budget = answers.budget || 10000;
     state.market = "United States";

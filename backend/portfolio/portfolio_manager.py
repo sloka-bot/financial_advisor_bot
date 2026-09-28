@@ -1,49 +1,30 @@
-"""
-Portfolio Manager - the brain of the advisory platform.
-
-Responsibilities:
-  - Track holdings, cash, and allocation weights for each user
-  - Detect allocation drift (when a position deviates >5% from target)
-  - Generate rebalancing suggestions with human-readable reasons
-  - Calculate confidence scores for each recommendation
-  - Apply approved recommendations to the portfolio state
-"""
+"""Calculate holding drift, recommendation support and fee-adjusted transactions."""
 
 import logging
 import math
 
 from backend.config.settings import RISK_CONSTRAINTS, TX_COST
-from backend.data.contracts import executable_price
+from backend.data.contracts import executable_price, freshness
 
 logger = logging.getLogger(__name__)
 
-DRIFT_THRESHOLD = 0.05  # flag for rebalancing when weight drifts >5% from target
+DRIFT_THRESHOLD = 0.05  # rebalance when weight drifts over 5% from target
 
 
 class PortfolioManager:
-    # - Rebalancing suggestions -
+    # Rebalancing suggestions.
 
     """Calculate holding evidence, risk metrics and rebalance suggestions."""
 
     def suggest_rebalance(
         self, holdings: list, master_data: dict, ranked_df=None, risk_profile="moderate", cash: float = 0.0
     ) -> list:
-        """
-        Generate rebalancing suggestions by comparing the current book to the
-        risk-profile MARKOWITZ target (via the shared allocation engine) - not to
-        an equal-weight target as before. Targets therefore respect the profile's
-        caps and cash floor, and drift is measured against the real optimum.
-
-        Weights are taken over the WHOLE portfolio value (invested + cash), and the
-        Markowitz budget is that same total, so a stock's current weight and its
-        target weight are on the same base. The caller passes both the profile and
-        the cash balance.
-        """
+        """Compare whole-portfolio holding weights with constrained historical allocation targets."""
         if not holdings:
             return []
         from backend.portfolio.allocation import build_markowitz_portfolio
 
-        # value the current book and derive current stock weights
+        # Value the current book and derive stock weights.
         priced, invested = [], 0.0
         for h in holdings:
             df = master_data.get(h["ticker"])
@@ -55,13 +36,10 @@ class PortfolioManager:
         if total_value <= 0:
             return []
 
-        # constrained Markowitz target over the held names, budgeted on the WHOLE
-        # portfolio value (so target weights include the cash slot, comparable to
-        # the current weights computed below)
+        # Build historical targets using total portfolio value, including cash.
         tickers = [h["ticker"] for h in holdings]
         port = build_markowitz_portfolio(master_data, tickers, total_value, risk_profile, current_holdings=holdings)
-        # If optimisation was unavailable, make no rebalance suggestions rather than
-        # reading an empty target as "sell everything".
+        # Skip rebalancing when optimisation is unavailable.
         if not port.get("portfolio", {}).get("available", True):
             logger.warning("Rebalance skipped: portfolio optimisation unavailable")
             return []
@@ -70,8 +48,12 @@ class PortfolioManager:
         suggestions = []
         for h in priced:
             ticker = h["ticker"]
+            df = master_data.get(ticker)
+            # Skip holdings without usable history instead of treating them as liquidation targets.
+            if df is None or df.empty or executable_price(df) is None:
+                continue
             cur_w = h["current_value"] / total_value
-            tgt_w = target.get(ticker, 0.0)  # 0 => optimiser wants it out
+            tgt_w = target.get(ticker, 0.0)  # zero means the optimiser exits the position
             drift = cur_w - tgt_w
             if abs(drift) < DRIFT_THRESHOLD:
                 continue
@@ -103,18 +85,10 @@ class PortfolioManager:
             )
         return suggestions
 
-    # - Confidence score -
+    # Confidence score.
 
     def confidence_score(self, ticker: str, df, predicted_return: float, prob_up: float = None) -> dict:
-        """
-        Compute a composite confidence score [0-100] for a recommendation.
-
-        Four factors, each scored 0-100:
-          model_signal   - combined XGBoost up-probability and LSTM expected return
-          sentiment      - FinBERT sentiment strength
-          momentum       - price momentum and RSI headroom
-          trend_strength - ADX value (trend clarity)
-        """
+        """Combine model signal, sentiment, momentum and trend into a 0-100 support score."""
         factors = {
             "model_signal": 50,
             "sentiment": 50,
@@ -125,9 +99,7 @@ class PortfolioManager:
         if df is not None and not df.empty:
             latest = df.iloc[-1]
 
-            # model signal: LSTM expected-return magnitude/direction combined with the
-            # XGBoost up-probability when available, so a strong classifier signal is
-            # reflected even if the LSTM return is weak or missing.
+            # Combine available return and probability signals into the support score.
             pred_score = min(100, abs(predicted_return) * 5000)
             if predicted_return > 0:
                 lstm_signal = int(50 + pred_score / 2)
@@ -141,17 +113,17 @@ class PortfolioManager:
             else:
                 factors["model_signal"] = lstm_signal
 
-            # sentiment: |sent_score| * 100, direction-adjusted
+            # Sentiment component, direction adjusted.
             sent = float(latest.get("sent_score", 0) or 0)
             factors["sentiment"] = max(0, min(100, int(50 + sent * 100)))
 
-            # momentum + RSI headroom
+            # Momentum and RSI headroom.
             mom = float(latest.get("momentum_10d", 0) or 0)
             rsi = float(latest.get("rsi", 50) or 50)
             rsi_room = (100 - rsi) / 100  # 0 near overbought, 1 near oversold
             factors["momentum"] = max(0, min(100, int(50 + mom * 1000 * rsi_room)))
 
-            # trend strength from ADX
+            # Trend strength from ADX.
             adx = float(latest.get("adx", 0) or 0)
             factors["trend_strength"] = min(100, int(adx * 2.5))
 
@@ -164,7 +136,7 @@ class PortfolioManager:
 
         return {"overall": overall, "factors": factors}
 
-    # - Apply approved recommendation -
+    # Apply approved recommendation.
 
     def apply_recommendation(
         self,
@@ -175,22 +147,13 @@ class PortfolioManager:
         risk_profile: str = "moderate",
         tx_cost: float = TX_COST,
     ) -> dict:
-        """
-        Execute an approved recommendation against the user's portfolio, ENFORCING
-        the risk profile's constraints (max single-position weight and minimum cash
-        floor) and charging transaction fees - the same rules the allocation engine
-        applies. A trade that cannot fit inside the caps is skipped with a reason,
-        never forced.
-
-        Returns updated holdings/cash plus max_position_pct, cash_pct and a
-        `respects_profile` flag so the caller can confirm the executed book is valid.
-        """
+        """Apply approved trades with fees, position limits and minimum cash constraints."""
         cons = RISK_CONSTRAINTS.get(risk_profile, RISK_CONSTRAINTS["moderate"])
         max_w, min_cash_frac = cons["max_weight"], cons["min_cash"]
 
         ticker = rec.get("ticker")
         action = rec.get("action", rec.get("sub_action", "BUY"))
-        # A REBALANCE suggestion carries its real direction in sub_action.
+        # A REBALANCE suggestion carries its direction in sub_action.
         if action == "REBALANCE":
             action = rec.get("sub_action", "BUY")
 
@@ -203,15 +166,16 @@ class PortfolioManager:
             return {"holdings": current_holdings, "cash": current_cash, "error": f"No price data for {ticker}"}
 
         holdings = [dict(h) for h in current_holdings]
-        # whole-portfolio value at each holding's own latest price (+ cash), the
-        # base for the profile caps
+        # Value each holding at its current execution price and include cash.
         prices = {h["ticker"]: (_price(h["ticker"]) or h.get("price", 0.0)) for h in holdings}
         prices[ticker] = price
-        # Every existing holding feeds the profile-constraint math (portfolio value,
-        # position caps), so all must have a CURRENT executable price. If any is
-        # stale/unavailable, the approval is unavailable rather than computed on a
-        # stored (possibly stale) price.
-        stale = [h["ticker"] for h in holdings if (executable_price(master_data.get(h["ticker"])) or 0.0) <= 0]
+        # Require a current execution price for every holding before assessing risk limits.
+        stale = [
+            h["ticker"]
+            for h in holdings
+            if (executable_price(master_data.get(h["ticker"])) or 0.0) <= 0
+            or not freshness(master_data.get(h["ticker"]))["fresh"]
+        ]
         if stale:
             return {
                 "holdings": current_holdings,
@@ -225,11 +189,7 @@ class PortfolioManager:
         existing = next((h for h in holdings if h["ticker"] == ticker), None)
         cur_val = (existing["shares"] * price) if existing else 0.0
 
-        # If the recommendation carries an explicit target weight (a REBALANCE
-        # suggestion does), trade to EXACTLY that weight so the executed book
-        # matches the advice ("restore target allocation"). Only a plain BUY/SELL
-        # with no target falls back to the generic 10%/50% heuristic. Trading to the
-        # explicit target keeps execution consistent with the recommendation.
+        # Use explicit target weights when supplied; otherwise apply the default trade fraction.
         tgt_w = rec.get("target_weight")
         target_frac = min(float(tgt_w) / 100.0, max_w) if tgt_w is not None else None
         if target_frac is not None:
@@ -243,14 +203,25 @@ class PortfolioManager:
             action = "BUY" if trade_val > 0 else "SELL"
 
         if action in ("BUY", "INCREASE"):
-            cash_floor = min_cash_frac * total_value  # keep min cash
+            cash_floor = min_cash_frac * total_value  # keep minimum cash
             spendable = max(0.0, current_cash - cash_floor)
             if target_frac is not None:
                 budget = min(max(0.0, target_frac * total_value - cur_val), spendable)  # to target
             else:
-                room_wt = max(0.0, max_w * total_value - cur_val)  # cap: max position weight
-                budget = min(0.10 * total_value, room_wt, spendable)  # generic 10% BUY
+                room_wt = max(0.0, max_w * total_value - cur_val)  # maximum position weight
+                budget = (
+                    min(room_wt, spendable)
+                    if rec.get("shares") is not None
+                    else min(0.10 * total_value, room_wt, spendable)
+                )
             shares = int(budget / (price * (1.0 + tx_cost)))  # leave room for the fee
+            requested = rec.get("shares")
+            if requested is not None:
+                if requested > shares:
+                    return {"error": "Requested shares exceed available cash or profile limits"}
+                shares = requested
+            elif rec.get("max_shares") is not None:
+                shares = min(shares, int(rec["max_shares"]))
             if shares < 1:
                 return {
                     "holdings": holdings,
@@ -288,12 +259,14 @@ class PortfolioManager:
         elif action in ("SELL", "REDUCE"):
             if not existing:
                 return {"holdings": holdings, "cash": round(current_cash, 2), "error": f"{ticker} not in portfolio"}
-            if target_frac is not None:
-                # sell exactly enough to reach the target weight (at least 1 share)
+            if rec.get("sell_all"):
+                sell_shares = existing["shares"]
+            elif target_frac is not None:
+                # Sell enough to reach the target weight, at least one share.
                 over_val = cur_val - target_frac * total_value
                 sell_shares = min(existing["shares"], max(1, math.ceil(over_val / price)))
             else:
-                sell_shares = min(existing["shares"], max(1, existing["shares"] // 2))  # generic 50% SELL
+                sell_shares = min(existing["shares"], max(1, existing["shares"] // 2))  # default 50% sell
             proceeds = sell_shares * price
             fee = proceeds * tx_cost
             existing["shares"] -= sell_shares
@@ -303,7 +276,7 @@ class PortfolioManager:
         else:
             return {"holdings": holdings, "cash": round(current_cash, 2), "error": f"Unknown action {action}"}
 
-        # recompute weights from the EXECUTED holdings + cash (each at its own price)
+        # Recompute weights from executed holdings and cash.
         prices = {h["ticker"]: (_price(h["ticker"]) or h.get("price", 0.0)) for h in holdings}
         total = sum(h["shares"] * prices[h["ticker"]] for h in holdings) + current_cash
         for h in holdings:
@@ -314,12 +287,15 @@ class PortfolioManager:
         return {
             "holdings": holdings,
             "cash": round(current_cash, 2),
+            "fees": round(fee, 6),
+            "ticker": ticker,
+            "proceeds": round(proceeds - fee, 2) if action in ("SELL", "REDUCE") else None,
             "max_position_pct": max_pos_pct,
             "cash_pct": cash_pct,
             "respects_profile": bool(max_pos_pct <= max_w * 100 + 0.5 and cash_pct >= min_cash_frac * 100 - 0.5),
         }
 
-    # - Reason generation -
+    # Reason generation.
 
     def _buy_reason(self, signal: dict, confidence: dict) -> str:
         ticker = signal.get("ticker", "")

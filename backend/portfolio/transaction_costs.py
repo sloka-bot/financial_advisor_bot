@@ -1,21 +1,4 @@
-"""
-transaction_costs.py
-
-Single source of truth for how a proportional transaction cost is charged
-across the system. The Markowitz cost-aware objective, the PPO trading
-environment, the walk-forward trading backtest and the single-name backtester
-all compute turnover the same way and charge the same rate here, so a
-strategy's reported net return rests on one consistent cost model instead of
-several slightly different ones.
-
-Cost model: a proportional cost of ``rate`` is charged on turnover, where
-turnover is the sum of absolute changes in portfolio weight,
-
-    turnover = sum_i |w_i - w_prev_i|
-
-and the charge is ``rate * turnover``. ``rate`` defaults to ``TX_COST`` (10 bps
-per unit of weight turnover).
-"""
+"""Calculate proportional trading costs from absolute portfolio-weight changes."""
 
 from collections.abc import Mapping
 
@@ -25,11 +8,7 @@ from backend.config.settings import TX_COST
 
 
 def turnover(prev_weights, new_weights) -> float:
-    """Return sum_i |w_i - w_prev_i| between two weight books.
-
-    Accepts either aligned numeric sequences/arrays or dicts keyed by asset.
-    Dicts are compared over the union of their keys (a missing key counts as 0).
-    """
+    """Sum absolute weight changes across aligned arrays or the union of asset keys."""
     if isinstance(prev_weights, Mapping) or isinstance(new_weights, Mapping):
         prev = dict(prev_weights) if isinstance(prev_weights, Mapping) else {}
         new = dict(new_weights) if isinstance(new_weights, Mapping) else {}

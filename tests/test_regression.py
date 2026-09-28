@@ -1,10 +1,4 @@
-"""
-test_regression.py
-
-One focused test per regression case. Each asserts the intended
-behaviour, so it would have failed on the pre-fix archive and passes now. Fast:
-no full model training or PPO learning - component-level checks only.
-"""
+"""Component-level regression tests."""
 
 import tempfile
 import unittest
@@ -17,23 +11,21 @@ from backend.portfolio.allocation import _returns_frame
 from backend.portfolio.markowitz import MarkowitzOptimizer, validate_allocation
 
 
-# --------------------------------------------------------------------------- #
-# Accounting (markowitz.to_shares / validate_allocation)
-# --------------------------------------------------------------------------- #
+# Accounting.
 class TestAccounting(unittest.TestCase):
     def setUp(self):
         self.mkw = MarkowitzOptimizer()
 
-    def test_flat_fee_never_negative_cash(self):
-        # $100 budget with a $5 flat fee per trade must not overspend.
+    def test_flat_fee_keeps_cash_non_negative(self):
+        # $100 budget with a $5 flat fee per trade.
         a = self.mkw.to_shares({"A": 0.5, "B": 0.5, "CASH": 0.0}, {"A": 40.0, "B": 55.0}, budget=100.0, fee_flat=5.0)
         self.assertGreaterEqual(a["cash_remaining"], -0.01)
-        # Negative cash must fail the budget reconciliation check.
+        # Negative cash fails reconciliation.
         self.assertTrue(a["reconciles"])
         self.assertFalse(a["cash_remaining"] < -0.01 and a["reconciles"])
 
     def test_weights_over_one_are_capped(self):
-        # input weights summing > 1 must not produce a >100% book
+        # Weights summing above 1 are capped.
         a = self.mkw.to_shares({"A": 0.6, "B": 0.6, "CASH": 0.0}, {"A": 10.0, "B": 10.0}, budget=1000.0)
         self.assertLessEqual(a["invested_weight_pct"], 100.01)
         self.assertGreaterEqual(a["cash_remaining"], -0.01)
@@ -48,17 +40,14 @@ class TestAccounting(unittest.TestCase):
         self.assertFalse(validate_allocation(bad, "moderate")["ok"])
 
     def test_validate_treats_empty_book_as_warning_not_violation(self):
-        # An all-cash book is a feasible optimum (there is no maximum-cash
-        # constraint), so it is a warning rather than a hard-constraint violation.
+        # An all-cash book is a warning, not a violation.
         empty = self.mkw.to_shares({"CASH": 1.0}, {}, budget=1000.0)
         report = validate_allocation(empty, "aggressive")
         self.assertTrue(report["ok"])
         self.assertTrue(report.get("warnings"))
 
 
-# --------------------------------------------------------------------------- #
-# Smart rebalancing funding (markowitz.plan_rebalance) - the 106% bug
-# --------------------------------------------------------------------------- #
+# Rebalance funding.
 class TestRebalanceFunding(unittest.TestCase):
     def test_suppressed_sales_do_not_fund_unfunded_buys(self):
         mkw = MarkowitzOptimizer()
@@ -67,13 +56,11 @@ class TestRebalanceFunding(unittest.TestCase):
         plan = mkw.plan_rebalance(cur, tgt, no_trade_band=0.03, min_trade=0.01, adjust_fraction=1.0)
         ew = plan["executed_weights"]
         stock_sum = sum(v for k, v in ew.items() if k != "CASH")
-        self.assertLessEqual(stock_sum, 1.0001)  # never > 100% invested
-        self.assertGreaterEqual(ew["CASH"], -1e-6)  # cash never negative
+        self.assertLessEqual(stock_sum, 1.0001)  # at most fully invested
+        self.assertGreaterEqual(ew["CASH"], -1e-6)  # cash stays non-negative
 
 
-# --------------------------------------------------------------------------- #
-# Covariance date alignment (allocation._returns_frame)
-# --------------------------------------------------------------------------- #
+# Covariance date alignment.
 class TestDateAlignment(unittest.TestCase):
     def _mk(self, start, n=300, seed=0):
         rng = np.random.default_rng(seed)
@@ -85,7 +72,7 @@ class TestDateAlignment(unittest.TestCase):
     def test_non_overlapping_histories_not_mixed(self):
         md = {"A": self._mk("2020-01-02", seed=1), "B": self._mk("2021-06-01", seed=2)}  # disjoint
         rf = _returns_frame(md, ["A", "B"], lookback=252)
-        # must NOT fabricate a 2-column matrix from non-overlapping dates
+        # Non-overlapping dates give no two-column matrix.
         self.assertFalse(rf.shape[0] > 0 and set(rf.columns) == {"A", "B"})
 
     def test_overlapping_histories_aligned_on_dates(self):
@@ -95,9 +82,7 @@ class TestDateAlignment(unittest.TestCase):
         self.assertEqual(rf.shape[1], 3)
 
 
-# --------------------------------------------------------------------------- #
-# PPO environment (backend.portfolio.rl_env)
-# --------------------------------------------------------------------------- #
+# PPO environment.
 class TestRLEnv(unittest.TestCase):
     def _md(self, starts, n=300):
         out = {}
@@ -143,7 +128,7 @@ class TestRLEnv(unittest.TestCase):
         act[0] = 0.5
         act[1] = 0.5
         env.step(act)
-        self.assertGreater(env.weights[0], 0.5)  # drifted toward A, not stuck at 0.5
+        self.assertGreater(env.weights[0], 0.5)  # drifted toward A
 
     def test_first_reward_is_bounded(self):
         from backend.portfolio.rl_env import PortfolioEnv
@@ -151,12 +136,10 @@ class TestRLEnv(unittest.TestCase):
         env = PortfolioEnv(self._md({"A": "2022-01-03", "B": "2022-01-03"}), ["A", "B"])
         env.reset(seed=0)
         _, r, _, _, _ = env.step(np.ones(env.n_stocks + 1, dtype=np.float32))
-        self.assertLess(abs(r), 1e4)  # no 1e-8-denominator blow-up
+        self.assertLess(abs(r), 1e4)  # bounded denominator
 
 
-# --------------------------------------------------------------------------- #
-# Label handling (fusion NaN target; LSTM excludes unlabelled rows)
-# --------------------------------------------------------------------------- #
+# Label handling.
 class TestLabels(unittest.TestCase):
     def test_fusion_keeps_missing_future_as_nan(self):
         from backend.data.fusion import FeatureFusion
@@ -167,7 +150,7 @@ class TestLabels(unittest.TestCase):
         pd.DataFrame({"close": 100 + np.arange(n) * 0.5}, index=idx).to_csv(f"{tmp}/T.csv")
         ff = FeatureFusion(features_dir=tmp, sentiment_dir=tmp)
         out = ff.fuse_ticker("T", save=False)
-        # the last PREDICTION_HORIZON rows have no observed future -> label must be NaN, not 0
+        # Rows without an observed future have a NaN label.
         self.assertTrue(out["target_direction"].isna().sum() >= 1)
         self.assertTrue(out["target_direction"].tail(1).isna().all())
 
@@ -180,13 +163,10 @@ class TestLabels(unittest.TestCase):
         df["ticker"] = "T"
         X, y, _ = LSTMForecaster()._build_sequences(df, fit_scaler=True)
         self.assertIsNotNone(y)
-        self.assertFalse(np.isnan(y).any())  # no fabricated target survived
+        self.assertFalse(np.isnan(y).any())  # no filled target
 
 
-# --------------------------------------------------------------------------- #
-# Second review batch: sentiment crash, LSTM alignment, experiment selection,
-# approval constraints, ranker logic, drift holding-period, calibration artifact.
-# --------------------------------------------------------------------------- #
+# Sentiment, LSTM alignment, experiment selection, approvals, ranker, drift and calibration.
 class TestSentimentSerialisation(unittest.TestCase):
     def test_dedupe_output_is_json_serialisable(self):
         import json as _json
@@ -199,9 +179,9 @@ class TestSentimentSerialisation(unittest.TestCase):
             {"title": "X Corp beats", "published_at": "2022-01-03T13:30:00Z"},
         ]  # duplicate
         out = a._dedupe(arts)
-        self.assertEqual(len(out), 1)  # dedup worked
-        self.assertIsInstance(out[0]["_date"], str)  # ISO string, not Timestamp
-        _json.dumps(out)  # must NOT raise (was TypeError)
+        self.assertEqual(len(out), 1)  # deduplicated
+        self.assertIsInstance(out[0]["_date"], str)  # ISO string
+        _json.dumps(out)  # serialises without error
         daily = a._aggregate_daily(
             [{**out[0], "sentiment_label": "positive", "sentiment_compound": 0.5, "sentiment_score": 0.9}]
         )
@@ -217,12 +197,11 @@ class TestLSTMAlignment(unittest.TestCase):
         rng = np.random.default_rng(0)
         data = {c: np.arange(n, dtype=float) + rng.normal(0, 0.01, n) for c in TRAIN_FEATURES}
         df = pd.DataFrame(data, index=idx)
-        df["target_return"] = np.arange(n, dtype=float)  # sentinel: label == row index
+        df["target_return"] = np.arange(n, dtype=float)  # label equals row index
         df["ticker"] = "T"
         f = LSTMForecaster(seq_len=5)
         X, y, _ = f._build_sequences(df, fit_scaler=True)
-        # last sample must be anchored at the FINAL row: its label is that row's
-        # target AND its window's last timestep is that row's (scaled) features.
+        # The last sample is anchored at the final row.
         self.assertEqual(float(y[-1]), float(n - 1))
         expected_last = f.scaler.transform(df[TRAIN_FEATURES].values[[n - 1]])[0]
         np.testing.assert_allclose(X[-1, -1, :], expected_last, rtol=1e-5, atol=1e-6)
@@ -234,7 +213,7 @@ class TestExperimentSelection(unittest.TestCase):
 
         idx = pd.to_datetime(["2022-01-03"]).repeat(2)
         panel = pd.DataFrame({"ticker": ["A", "B"], "_x": [1.0, 2.0], "trade_return": [-0.10, 0.20]}, index=idx)
-        # Duplicate date indices must preserve B's higher signal and +20% return.
+        # Duplicate date indices keep B's higher signal and +20% return.
         res = trading_backtest(panel, lambda r: r["_x"], horizon=21, top_k=1, tx_cost=0.0)
         self.assertGreater(res["net_return_pct"], 0.0)
         self.assertAlmostEqual(res["net_return_pct"], 20.0, places=4)
@@ -249,7 +228,7 @@ class TestApprovalConstraints(unittest.TestCase):
     def test_single_buy_cannot_breach_position_cap(self):
         idx = pd.to_datetime(["2022-01-03"])
         md = {"Z": pd.DataFrame({"close": [900.0], "exec_close": [900.0]}, index=idx)}
-        # $1000 total, $900 share, moderate 25% cap -> no room, BUY skipped (never a 90% position)
+        # $1000 total, $900 share, 25% cap, so the buy is skipped
         res = self.pm.apply_recommendation({"ticker": "Z", "action": "BUY"}, [], 1000.0, md, risk_profile="moderate")
         self.assertIn("error", res)
 
@@ -263,7 +242,7 @@ class TestApprovalConstraints(unittest.TestCase):
 
 
 class TestRankerLogic(unittest.TestCase):
-    def test_negative_forecast_never_buys(self):
+    def test_negative_forecast_is_not_bought(self):
         from backend.prediction.recommender import classify_signal
 
         self.assertEqual(classify_signal(prob_up=0.10, exp_ret=-0.01), "SELL")
@@ -306,13 +285,13 @@ class TestDriftHoldingPeriod(unittest.TestCase):
         mon = dm.DriftMonitor()
         n = 60
         idx = pd.bdate_range("2022-01-03", periods=n)
-        close = np.concatenate([np.full(22, 100.0), np.linspace(100, 50, n - 22)])  # flat 21d, then crash
+        close = np.concatenate([np.full(22, 100.0), np.linspace(100, 50, n - 22)])  # flat 21 days, then crash
         md = {"T": pd.DataFrame({"close": close}, index=idx)}
         mon.log_recommendation("T", "BUY", 0.0, date=str(idx[0].date()), horizon=21)
         mon.evaluate_past_recommendations(md)
         o = mon._load_outcomes()[0]
         self.assertTrue(o["evaluated"])
-        self.assertAlmostEqual(o["actual_return"], 0.0, places=1)  # ~0 at the horizon, NOT -50%
+        self.assertAlmostEqual(o["actual_return"], 0.0, places=1)  # about zero at the horizon
 
 
 class TestCalibrationArtifact(unittest.TestCase):
@@ -328,7 +307,7 @@ class TestCalibrationArtifact(unittest.TestCase):
         f.model = {"dummy": 1}  # picklable stand-in
         f._feat_cols = ["a", "b"]
         (tmp / "calibrated.pkl").write_bytes(b"stale")
-        f.calibrated_model = None  # this model has no calibrator
+        f.calibrated_model = None  # no calibrator
         f._save()
         self.assertFalse((tmp / "calibrated.pkl").exists())  # stale artifact removed
 
@@ -349,34 +328,31 @@ class TestUserStore(unittest.TestCase):
         store.add_recommendations("u1", [{"ticker": "C"}])
         new_id = store.get("u1")["pending_recommendations"][0]["id"]
         self.assertEqual(first_ids, [1, 2])
-        self.assertGreater(new_id, max(first_ids))  # never restarts at 1
+        self.assertGreater(new_id, max(first_ids))  # ids keep increasing
 
 
-# --------------------------------------------------------------------------- #
-# Phase (a): membership, PPO controller returns, paired CI, explanation faithfulness,
-# and request-model validation.
-# --------------------------------------------------------------------------- #
-class TestFaithfulExplanation(unittest.TestCase):
+# Membership, PPO returns, paired CI, explanation checks and request validation.
+class TestExplanationValidation(unittest.TestCase):
     def test_validate_explanation_catches_field_unit_and_claims(self):
         from backend.explain import explainer_modes as em
 
         f = em.make_facts("AAPL", "BUY", horizon_days=21, forecast_return_pct=3.2, confidence_pct=61, price=55.0)
         self.assertFalse(em.validate_explanation("Guaranteed 3.2% return over 21 trading days.", f)[0])
-        self.assertFalse(em.validate_explanation("The current share price is $61.", f)[0])  # 61=confidence, not price
+        self.assertFalse(em.validate_explanation("The current share price is $61.", f)[0])  # 61 is a confidence, not a price
         self.assertFalse(em.validate_explanation("This investment cannot lose money.", f)[0])
         self.assertFalse(em.validate_explanation("Expect +3.2% over 5 trading days.", f)[0])  # wrong horizon
         self.assertTrue(
             em.validate_explanation("Forecast +3.2% over 21 trading days; confidence 61%. Price $55.", f)[0]
         )
 
-    def test_live_faithfulness_gate(self):
+    def test_live_explanation_check(self):
         from backend.explain.explainer import Explainer
 
         e = Explainer()
         rec = {"current_price": 55.0, "horizon": 21}
-        self.assertFalse(e._faithful_ok("We expect a gain tomorrow.", rec)[0])  # 1-day horizon implied
-        self.assertFalse(e._faithful_ok("Buy around $61.", rec)[0])  # not the current price
-        self.assertTrue(e._faithful_ok("A modest gain over ~21 trading days.", rec)[0])
+        self.assertFalse(e._validate_claim_context("We expect a gain tomorrow.", rec)[0])  # 1-day horizon implied
+        self.assertFalse(e._validate_claim_context("Buy around $61.", rec)[0])  # not the current price
+        self.assertTrue(e._validate_claim_context("A modest gain over ~21 trading days.", rec)[0])
 
 
 class TestPairedBootstrap(unittest.TestCase):
@@ -389,12 +365,12 @@ class TestPairedBootstrap(unittest.TestCase):
         yt = rng.normal(0, 0.02, n)
         model = pd.DataFrame(
             {"y_true": yt, "y_pred": yt + rng.normal(0, 0.004, n), "ticker": ["A", "B", "C"] * 60}, index=idx
-        )  # close to truth
+        )  # close to actual
         base = pd.DataFrame(
             {"y_true": yt, "y_pred": yt + rng.normal(0, 0.03, n), "ticker": ["A", "B", "C"] * 60}, index=idx
         )  # worse
         ci = ex.paired_metric_ci(model, base, metric="abs_error")
-        self.assertGreater(ci["mean_diff"], 0)  # model reduces |error|
+        self.assertGreater(ci["mean_diff"], 0)  # smaller absolute error
         self.assertTrue(ci["significant"])  # CI excludes 0
 
 
@@ -405,13 +381,13 @@ class TestRequestValidation(unittest.TestCase):
         pyd = importlib.import_module("pydantic")
         from backend.api.schemas import PortfolioRequest
 
-        # valid
+        # Valid.
         r = PortfolioRequest(risk_profile="Aggressive", budget=5000, top_n=5)
         self.assertEqual(r.risk_profile, "aggressive")
-        # non-positive budget rejected
+        # Non-positive budget rejected.
         with self.assertRaises(pyd.ValidationError):
             PortfolioRequest(budget=0)
-        # unknown profile rejected
+        # Unknown profile rejected.
         with self.assertRaises(pyd.ValidationError):
             PortfolioRequest(risk_profile="yolo")
 
@@ -463,7 +439,7 @@ class TestRebalanceToTarget(unittest.TestCase):
         }
         res = pm.apply_recommendation(rec, holdings, 7000.0, md, risk_profile="moderate")
         z = next(h for h in res["holdings"] if h["ticker"] == "Z")
-        # target 25% of $10k = $2500 = 25 shares: sell 5, NOT half (which would be ~15 shares)
+        # Target 25% of $10k is 25 shares, so sell 5.
         self.assertAlmostEqual(z["shares"], 25, delta=1)
 
 
@@ -490,16 +466,16 @@ class TestPPODeterministicEval(unittest.TestCase):
         env.reset(seed=2)
         t2 = env.t
         self.assertEqual(t1, env.start_idx)
-        self.assertEqual(t1, t2)  # same fixed OOS start every episode
+        self.assertEqual(t1, t2)  # same start every episode
 
-    def test_strict_features_raises_on_missing(self):
+    def test_require_features_raises_on_missing(self):
         from backend.config.settings import RL_STATE_FEATURES
         from backend.portfolio.rl_env import PortfolioEnv
 
         md = self._md()
         md["A"] = md["A"].drop(columns=[RL_STATE_FEATURES[0]])
         with self.assertRaises(ValueError):
-            PortfolioEnv(md, ["A", "B"], strict_features=True)
+            PortfolioEnv(md, ["A", "B"], require_features=True)
 
 
 class TestMarkowitzRisk(unittest.TestCase):
@@ -513,7 +489,7 @@ class TestMarkowitzRisk(unittest.TestCase):
             index=idx,
         )
         cov = mkw.covariance(rmat)
-        self.assertTrue(np.all(np.diag(cov) > 0))  # real variance, not ~0 from fake fills
+        self.assertTrue(np.all(np.diag(cov) > 0))  # real variance
         res = mkw.optimize(["A", "B"], np.array([0.10, 0.10]), cov, "moderate")
         self.assertGreaterEqual(res["var_95_1day"], 0.0)
         self.assertGreaterEqual(res["cvar_95_1day"], res["var_95_1day"])  # ES >= VaR

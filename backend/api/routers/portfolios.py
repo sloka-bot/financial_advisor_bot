@@ -52,7 +52,9 @@ def get_recommendations_api(req: PortfolioRequest):
         df = master_data.get(signal["ticker"])
         _pp = finite_number(signal.get("prob_up_pct"))
         confidence = runtime.portfolio_manager.confidence_score(
-            signal["ticker"], df, (finite_number(signal.get("predicted_return"), 0)) / 100,
+            signal["ticker"],
+            df,
+            (finite_number(signal.get("predicted_return"), 0)) / 100,
             prob_up=(_pp / 100 if _pp is not None else None),
         )
         signal["confidence"] = confidence["overall"]
@@ -67,8 +69,7 @@ def get_portfolio(req: PortfolioRequest):
     risk_profile = req.risk_profile
     budget = req.budget
     top_n = req.top_n
-    # For a user-specific request the saved profile is the source of truth, so a
-    # conservative user's book is never analysed with an aggressive request profile.
+    # Use the saved risk profile for user-specific portfolio requests.
     if req.user_id and (saved := runtime.user_store.get(req.user_id)):
         risk_profile = saved.get("risk_profile", risk_profile)
         budget = saved.get("budget", budget) or budget
@@ -91,21 +92,22 @@ def get_portfolio(req: PortfolioRequest):
                 "sentiment": r.get("sentiment"),
                 "composite_score": r.get("composite_score"),
                 "signal": classify_signal(r.get("prob_up"), r.get("expected_return"), risk_profile),
-            }  # the TRUE ML classification, kept separate from the allocation action
+            }  # model classification, separate from the allocation action
             for r in ranked.to_dict("records")
         }
         if hasattr(ranked, "to_dict")
         else {}
     )
-    portfolio = build_markowitz_portfolio(master_data, processed, budget, risk_profile, ml_meta=ml_meta)
+    portfolio = build_markowitz_portfolio(
+        master_data, processed, budget, risk_profile, ml_meta=ml_meta, target_positions=5
+    )
     proposed = portfolio["portfolio"]
     if req.user_id and (profile := runtime.user_store.get(req.user_id)):
         portfolio["portfolio"] = runtime.actual_portfolio(profile)
     holdings = portfolio.get("portfolio", {}).get("holdings", [])
     for h in holdings:
         df = master_data.get(h["ticker"])
-        # expected_return_decimal is already a decimal (or None); confidence_score
-        # expects a decimal, so it is passed through without dividing by 100.
+        # Pass the forecast as a decimal return to the confidence calculation.
         c = runtime.portfolio_manager.confidence_score(h["ticker"], df, h.get("expected_return_decimal") or 0.0)
         metadata = dict(ml_meta.get(h["ticker"], {}))
         if "predicted_return" in metadata:
@@ -114,7 +116,7 @@ def get_portfolio(req: PortfolioRequest):
         h.update(metadata)
         h["confidence"] = c["overall"]
         h["confidence_factors"] = c["factors"]
-    # drift suggestions on the whole-portfolio value (incl. cash) and the SAME profile
+    # Drift suggestions use total portfolio value including cash.
     port_cash = portfolio.get("portfolio", {}).get("cash_remaining", 0.0)
     drift_suggestions = (
         runtime.portfolio_manager.suggest_rebalance(holdings, master_data, risk_profile=risk_profile, cash=port_cash)

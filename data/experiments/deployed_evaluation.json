@@ -1,0 +1,236 @@
+{
+  "schema_version": 3,
+  "generated_at": "2026-09-27T11:57:39.904985",
+  "horizon": 21,
+  "split": {
+    "dev_dates": 2456,
+    "test_dates": 825,
+    "test_start": "2020-08-20",
+    "test_end": "2023-11-29",
+    "embargo_sessions": 21
+  },
+  "note": "models retrained under a clean chronological split with train-only preprocessing and an H-session embargo; the deployed model TYPES, evaluated out-of-sample - not the on-disk all-data weights",
+  "classifier_track": {
+    "n_dev": 922744,
+    "n_test": 378236,
+    "test_class_balance": {
+      "up": 0.5469653866897916,
+      "down": 0.45303461331020844
+    },
+    "models": {
+      "majority_class": {
+        "balanced_accuracy": 0.5,
+        "roc_auc": null,
+        "confusion": {
+          "tp": 206882,
+          "tn": 0,
+          "fp": 171354,
+          "fn": 0
+        },
+        "note": "always predicts up",
+        "lift_vs_random": {
+          "balanced_accuracy_minus_0.5": 0.0,
+          "roc_auc_minus_0.5": null
+        }
+      },
+      "logistic_technical": {
+        "balanced_accuracy": 0.4989,
+        "roc_auc": 0.5072,
+        "confusion": {
+          "tp": 202454,
+          "tn": 3278,
+          "fp": 168076,
+          "fn": 4428
+        },
+        "fit": {
+          "converged": true,
+          "iterations": 3,
+          "solver": "newton-cholesky",
+          "scaler": "StandardScaler"
+        },
+        "lift_vs_random": {
+          "balanced_accuracy_minus_0.5": -0.0011,
+          "roc_auc_minus_0.5": 0.0072
+        }
+      },
+      "xgb_technical": {
+        "balanced_accuracy": 0.4989,
+        "roc_auc": 0.5025,
+        "confusion": {
+          "tp": 193631,
+          "tn": 10609,
+          "fp": 160745,
+          "fn": 13251
+        },
+        "lift_vs_random": {
+          "balanced_accuracy_minus_0.5": -0.0011,
+          "roc_auc_minus_0.5": 0.0025
+        }
+      },
+      "xgb_technical_sentiment": {
+        "balanced_accuracy": 0.4997,
+        "roc_auc": 0.5032,
+        "confusion": {
+          "tp": 193803,
+          "tn": 10746,
+          "fp": 160608,
+          "fn": 13079
+        },
+        "lift_vs_random": {
+          "balanced_accuracy_minus_0.5": -0.0003,
+          "roc_auc_minus_0.5": 0.0032
+        }
+      }
+    },
+    "calibration": {
+      "raw": {
+        "brier": 0.25071,
+        "ece_10bin": 0.03593
+      },
+      "calibrated": {
+        "brier": 0.25062,
+        "ece_10bin": 0.05205
+      },
+      "n_calibration_rows": 157406,
+      "n_test_rows": 378236,
+      "bins": 10
+    },
+    "sentiment_contribution_paired_dir_hit_ci": {
+      "mean_diff": 0.000801,
+      "lo": -0.000264,
+      "hi": 0.001735,
+      "n_dates": 825,
+      "n_obs": 378236,
+      "significant": false,
+      "metric": "dir_hit"
+    },
+    "class_imbalance": {
+      "up": 206882,
+      "down": 171354,
+      "up_fraction": 0.547,
+      "imbalanced": false
+    },
+    "test_window_regime": {
+      "mean_forward_return": 0.01173,
+      "label": "bull",
+      "note": "Realized mean forward return over the test window; context, not a predictor."
+    }
+  },
+  "regression_track": {
+    "n_dev": 922744,
+    "n_test": 378236,
+    "models": {
+      "zero_return": {
+        "mae": 0.06864,
+        "rmse": 0.091894,
+        "dir_acc": 0.0005
+      },
+      "dev_hist_mean": {
+        "mae": 0.068225,
+        "rmse": 0.091144,
+        "dir_acc": 0.547
+      },
+      "xgb_regressor": {
+        "mae": 0.069022,
+        "rmse": 0.092196,
+        "dir_acc": 0.5275
+      },
+      "lstm_actual": {
+        "mae": 0.068124,
+        "rmse": 0.090659,
+        "dir_acc": 0.5472,
+        "n_test": 376641,
+        "evaluation_sample": "sequence_eligible_test_rows"
+      }
+    },
+    "lstm_coverage": {
+      "n_requested": 378236,
+      "n_scored": 376641,
+      "n_excluded_short_history": 1595,
+      "sequence_length": 30,
+      "exclusion_rule": "Fewer than sequence_length rows in the filtered ticker history",
+      "excluded_by_ticker": {
+        "LUMN": 29,
+        "ETSY": 29,
+        "POOL": 29,
+        "VTRS": 29,
+        "TSLA": 29,
+        "OTIS": 29,
+        "CARR": 29,
+        "ENPH": 29,
+        "TRMB": 29,
+        "MPWR": 29,
+        "CZR": 29,
+        "PENN": 29,
+        "GNRC": 29,
+        "NXPI": 29,
+        "PTC": 29,
+        "CRL": 29,
+        "MRNA": 29,
+        "BBWI": 29,
+        "TECH": 29,
+        "MTCH": 29,
+        "BRO": 29,
+        "EPAM": 29,
+        "FDS": 29,
+        "SEDG": 29,
+        "WTW": 29,
+        "NDSN": 29,
+        "PARA": 29,
+        "OGN": 29,
+        "MOH": 29,
+        "CPT": 29,
+        "WBD": 29,
+        "BALL": 29,
+        "VICI": 29,
+        "META": 29,
+        "ON": 29,
+        "ELV": 29,
+        "CSGP": 29,
+        "INVH": 29,
+        "TRGP": 29,
+        "ACGL": 29,
+        "CEG": 29,
+        "GEN": 29,
+        "STLD": 29,
+        "BG": 29,
+        "PODD": 29,
+        "FICO": 29,
+        "AXON": 29,
+        "RVTY": 29,
+        "PANW": 29,
+        "EG": 29,
+        "COR": 29,
+        "ABNB": 29,
+        "BX": 29,
+        "LULU": 29,
+        "HUBB": 29
+      }
+    },
+    "lstm_matched_comparison": {
+      "n_test": 376641,
+      "models": {
+        "zero_return": {
+          "mae": 0.068595,
+          "rmse": 0.091833,
+          "dir_acc": 0.0005
+        },
+        "dev_hist_mean": {
+          "mae": 0.068176,
+          "rmse": 0.091077,
+          "dir_acc": 0.5471
+        },
+        "xgb_regressor": {
+          "mae": 0.068963,
+          "rmse": 0.092111,
+          "dir_acc": 0.5276
+        },
+        "lstm_actual": {
+          "mae": 0.068124,
+          "rmse": 0.090659,
+          "dir_acc": 0.5472
+        }
+      }
+    }
+  }
+}

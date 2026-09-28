@@ -24,14 +24,14 @@ function renderTools() {
   bindTabSwitching();
   bindLiveInputs();
 
-  /* initialise all calculators so the first tab always shows a result */
+  /* Initialise all calculators so the first tab shows a result. */
   calcCompound();
   calcKelly();
   calcRR();
   calcMC();
 }
 
-/* - Tab switching - */
+/* Tab switching */
 function bindTabSwitching() {
   document.querySelectorAll(".tool-tab").forEach((tab) => {
     tab.addEventListener("click", () => {
@@ -45,13 +45,13 @@ function bindTabSwitching() {
       document
         .getElementById("tool-" + tab.dataset.tool)
         ?.classList.add("active");
-      /* lazy-initialise charts that require the panel to be visible first */
+      /* Initialise charts once their panel is visible. */
       if (tab.dataset.tool === "frontier") calcFrontier();
     });
   });
 }
 
-/* single event delegation for all range inputs */
+/* Delegated handler for range inputs */
 function bindLiveInputs() {
   document.getElementById("view-tools").oninput = (e) => {
     const id = e.target.id;
@@ -65,10 +65,8 @@ function bindLiveInputs() {
   document.getElementById("ef-run")?.addEventListener("click", calcFrontier);
 }
 
-/* TAB 1 - Compound Interest
-   Shows how compound interest outperforms simple interest over time.
-   */
-// Render the compound interest calculator panel
+/* Tab 1: compound versus simple interest. */
+// Render the compound interest calculator.
 function buildCompound() {
   return `<div class="tool-grid">
     <div class="tool-form-card">
@@ -139,12 +137,8 @@ function calcCompound() {
   compoundChart("chart-compound", labels, flat, compound);
 }
 
-/* TAB 2 - Kelly Criterion
-   Calculates the mathematically optimal fraction of capital to risk per trade.
-   Formula: f* = (bp - q) / b   where b = odds, p = win rate, q = 1 - p
-   Half-Kelly (f* / 2) is the practical recommendation to reduce ruin risk.
-   */
-// Render the Kelly criterion bet sizing calculator
+/* Tab 2: Kelly criterion, f* = (bp - q) / b, with half-Kelly shown. */
+// Render the Kelly criterion calculator.
 function buildKelly() {
   return `<div class="tool-grid">
     <div class="tool-form-card">
@@ -212,7 +206,7 @@ function calcKelly() {
     "$" + halfPos.toLocaleString() + ` (${(fH * 100).toFixed(1)}%)`,
   );
 
-  /* draw a curve showing Kelly fraction across win rates 30-80% */
+  /* Kelly fraction across win rates of 30-80% */
   const wrRange = Array.from({ length: 51 }, (_, i) => 30 + i);
   const kellyVals = wrRange.map((w) => {
     const pp = w / 100;
@@ -221,7 +215,7 @@ function calcKelly() {
   });
   const halfVals = kellyVals.map((v) => v / 2);
 
-  safeChart("chart-kelly", {
+  drawChart("chart-kelly", {
     type: "line",
     data: {
       labels: wrRange.map((w) => w + "%"),
@@ -281,10 +275,7 @@ function calcKelly() {
   });
 }
 
-/* TAB 3 - Risk / Reward
-   Shows the break-even win rate for a given R:R ratio and calculates
-   expected value. A trade is only worth taking when EV > 0.
-   */
+/* Tab 3: break-even win rate and expected value for a reward-to-risk ratio. */
 function buildRR() {
   return `<div class="tool-grid">
     <div class="tool-form-card">
@@ -351,14 +342,14 @@ function calcRR() {
     vEl.style.color = ev >= 0 ? "var(--green)" : "var(--red)";
   }
 
-  /* EV curve across win rates */
+  /* Expected value across win rates */
   const wrs = Array.from({ length: 71 }, (_, i) => 20 + i);
   const evs = wrs.map((w) => (w / 100) * reward - (1 - w / 100) * risk);
   const zeroCross = wrs.findIndex(
     (w) => (w / 100) * reward - (1 - w / 100) * risk >= 0,
   );
 
-  safeChart("chart-rr", {
+  drawChart("chart-rr", {
     type: "line",
     data: {
       labels: wrs.map((w) => w + "%"),
@@ -421,12 +412,7 @@ function calcRR() {
   });
 }
 
-/* TAB 4 - Monte Carlo Simulation
-   Runs 1,000 portfolio paths using a Geometric Brownian Motion model.
-   GBM is the foundation of the Black-Scholes options model and assumes
-   log-normally distributed returns - a reasonable approximation for
-   index-level instruments over short horizons.
-   */
+/* Tab 4: Monte Carlo simulation of 1,000 geometric Brownian motion paths. */
 function buildMC() {
   return `<div class="tool-grid">
     <div class="tool-form-card">
@@ -495,7 +481,7 @@ function calcMC() {
     finals.push(val);
   }
 
-  /* build percentile fan at regular intervals */
+  /* Percentile fan at regular intervals */
   const step = Math.max(1, Math.floor(days / 80));
   const labels = [];
   const p10 = [],
@@ -512,7 +498,7 @@ function calcMC() {
     else labels.push(i % (252 * 2) === 0 ? `Yr ${Math.round(i / 252)}` : "");
   }
 
-  /* summary statistics */
+  /* Summary statistics */
   const sorted = [...finals].sort((a, b) => a - b);
   const med = sorted[Math.floor(N * 0.5)];
   const p10v = sorted[Math.floor(N * 0.1)];
@@ -528,7 +514,7 @@ function calcMC() {
 
   monteCarloChart("chart-mc-fan", labels, { p10, p50, p90 });
 
-  /* histogram - bucket terminal values into 20 bins */
+  /* Histogram of terminal values in 20 bins */
   const minV = Math.min(...finals);
   const maxV = Math.max(...finals);
   const bins = 20;
@@ -549,11 +535,7 @@ function calcMC() {
   );
 }
 
-/* TAB 5 - Efficient Frontier (2-asset)
-   Demonstrates the Markowitz (1952) mean-variance framework by generating
-   random two-asset portfolio weights and plotting risk vs return.
-   The maximum Sharpe ratio portfolio is highlighted as the optimal choice.
-   */
+/* Tab 5: two-asset efficient frontier with the maximum Sharpe portfolio. */
 function buildFrontier() {
   return `<div class="tool-grid">
     <div class="tool-form-card">
@@ -615,7 +597,7 @@ function calcFrontier() {
   const rho = corr / 100;
   const rf = 0.02; // 2% risk-free rate
 
-  /* evaluate 501 evenly spaced weight combinations and compute portfolio risk/return */
+  /* Risk and return for 501 evenly spaced weights */
   const points = [];
   let bestSharpe = -Infinity;
   let bestPoint = null;

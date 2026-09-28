@@ -1,0 +1,144 @@
+{
+  "schema_version": 3,
+  "generated_at": "2026-09-27T12:48:35.912958",
+  "horizon": 1,
+  "split": {
+    "dev_dates": 2491,
+    "test_dates": 830,
+    "test_start": "2020-09-11",
+    "test_end": "2023-12-28",
+    "embargo_sessions": 1
+  },
+  "note": "models retrained under a clean chronological split with train-only preprocessing and an H-session embargo; the deployed model TYPES, evaluated out-of-sample - not the on-disk all-data weights",
+  "classifier_track": {
+    "n_dev": 938143,
+    "n_test": 381143,
+    "test_class_balance": {
+      "up": 0.5159953088473355,
+      "down": 0.48400469115266453
+    },
+    "models": {
+      "majority_class": {
+        "balanced_accuracy": 0.5,
+        "roc_auc": null,
+        "confusion": {
+          "tp": 196668,
+          "tn": 0,
+          "fp": 184475,
+          "fn": 0
+        },
+        "note": "always predicts up",
+        "lift_vs_random": {
+          "balanced_accuracy_minus_0.5": 0.0,
+          "roc_auc_minus_0.5": null
+        }
+      },
+      "logistic_technical": {
+        "balanced_accuracy": 0.5049,
+        "roc_auc": 0.5083,
+        "confusion": {
+          "tp": 175629,
+          "tn": 21529,
+          "fp": 162946,
+          "fn": 21039
+        },
+        "fit": {
+          "converged": true,
+          "iterations": 2,
+          "solver": "newton-cholesky",
+          "scaler": "StandardScaler"
+        },
+        "lift_vs_random": {
+          "balanced_accuracy_minus_0.5": 0.0049,
+          "roc_auc_minus_0.5": 0.0083
+        }
+      },
+      "xgb_technical": {
+        "balanced_accuracy": 0.5033,
+        "roc_auc": 0.5093,
+        "confusion": {
+          "tp": 165782,
+          "tn": 30179,
+          "fp": 154296,
+          "fn": 30886
+        },
+        "lift_vs_random": {
+          "balanced_accuracy_minus_0.5": 0.0033,
+          "roc_auc_minus_0.5": 0.0093
+        }
+      },
+      "xgb_technical_sentiment": {
+        "balanced_accuracy": 0.5037,
+        "roc_auc": 0.5088,
+        "confusion": {
+          "tp": 165707,
+          "tn": 30396,
+          "fp": 154079,
+          "fn": 30961
+        },
+        "lift_vs_random": {
+          "balanced_accuracy_minus_0.5": 0.0037,
+          "roc_auc_minus_0.5": 0.0088
+        }
+      }
+    },
+    "calibration": {
+      "raw": {
+        "brier": 0.25015,
+        "ece_10bin": 0.01565
+      },
+      "calibrated": {
+        "brier": 0.24994,
+        "ece_10bin": 0.01475
+      },
+      "n_calibration_rows": 160213,
+      "n_test_rows": 381143,
+      "bins": 10
+    },
+    "sentiment_contribution_paired_dir_hit_ci": {
+      "mean_diff": 0.000462,
+      "lo": -0.000274,
+      "hi": 0.001232,
+      "n_dates": 830,
+      "n_obs": 381143,
+      "significant": false,
+      "metric": "dir_hit"
+    },
+    "class_imbalance": {
+      "up": 196668,
+      "down": 184475,
+      "up_fraction": 0.516,
+      "imbalanced": false
+    },
+    "test_window_regime": {
+      "mean_forward_return": 0.00062,
+      "label": "sideways",
+      "note": "Realized mean forward return over the test window; context, not a predictor."
+    }
+  },
+  "regression_track": {
+    "n_dev": 938143,
+    "n_test": 381143,
+    "models": {
+      "zero_return": {
+        "mae": 0.014278,
+        "rmse": 0.020492,
+        "dir_acc": 0.0038
+      },
+      "dev_hist_mean": {
+        "mae": 0.014267,
+        "rmse": 0.020483,
+        "dir_acc": 0.516
+      },
+      "xgb_regressor": {
+        "mae": 0.014315,
+        "rmse": 0.020598,
+        "dir_acc": 0.5122
+      }
+    },
+    "lstm_status": {
+      "status": "not_evaluated",
+      "reason": "disabled_in_run_configuration"
+    }
+  }
+}

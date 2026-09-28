@@ -1,21 +1,4 @@
-"""
-train_horizons.py
-
-Train and deploy SIDE models for the short horizons (1 and 5 trading sessions),
-so the Stock Predictor can offer a 1 / 5 / 21-day forecast. The 21-day models are
-the primary deployed artifacts (models/xgboost, models/lstm) and are trained by
-retrain_models.py / retrain_lstm.py - this script never touches them or the shared
-registry.
-
-Each horizon H gets its own directory:
-    models/xgboost/h{H}/   models/lstm/h{H}/
-The forward-return label is recomputed PER TICKER at horizon H before training, so
-an H-day model learns an H-day target (not the 21-day label baked into the masters).
-
-Run (from the project root):
-    ./venv/bin/python scripts/train_horizons.py --limit 5 --epochs 2     # fast smoke test
-    caffeinate -i ./venv/bin/python scripts/train_horizons.py            # full 1- and 5-day models
-"""
+"""Train the 1- and 5-session side models for the Stock Predictor."""
 
 import argparse
 import logging
@@ -39,20 +22,23 @@ FEATURES_DIR = Path("data/features")
 
 
 def relabel(df, horizon):
-    """Recompute the forward-return label at `horizon` sessions, per ticker, so no
-    label crosses the seam between two tickers."""
+    """Recompute the forward-return label at the given horizon within each ticker."""
     out = df.copy()
     fwd_close = out.groupby("ticker")["close"].shift(-horizon)
     out["target_return"] = fwd_close / out["close"] - 1.0
-    out["target_direction"] = np.where(
-        out["target_return"].notna(), (out["target_return"] > 0).astype(float), np.nan
-    )
+    out["target_direction"] = np.where(out["target_return"].notna(), (out["target_return"] > 0).astype(float), np.nan)
     return out
 
 
 def main():
     ap = argparse.ArgumentParser()
-    ap.add_argument("--horizons", type=int, nargs="+", default=[1, 5], help="short horizons to train (21 is the primary, trained elsewhere)")
+    ap.add_argument(
+        "--horizons",
+        type=int,
+        nargs="+",
+        default=[1, 5],
+        help="short horizons to train (21 is the primary, trained elsewhere)",
+    )
     ap.add_argument("--epochs", type=int, default=50, help="LSTM epochs max (early stopping ends it sooner)")
     ap.add_argument("--batch-size", type=int, default=256, help="LSTM batch size")
     ap.add_argument("--patience", type=int, default=10, help="LSTM early-stop patience")
@@ -79,9 +65,7 @@ def main():
 
     import pandas as pd
 
-    combined = combined.loc[
-        (combined.index >= pd.Timestamp(args.start)) & (combined.index <= pd.Timestamp(args.end))
-    ]
+    combined = combined.loc[(combined.index >= pd.Timestamp(args.start)) & (combined.index <= pd.Timestamp(args.end))]
     if combined.empty:
         logger.error("No rows in [%s, %s]", args.start, args.end)
         sys.exit(1)
@@ -104,7 +88,10 @@ def main():
         xgb_res = XGBoostForecaster(models_dir=xgb_dir, horizon=horizon).train(panel, register=False)
         logger.info(
             "  XGBoost H=%d: cv_auc_mean=%s cv_direction_acc=%s deployed=%s",
-            horizon, xgb_res.get("cv_auc_mean"), xgb_res.get("cv_direction_acc"), xgb_res.get("deployed"),
+            horizon,
+            xgb_res.get("cv_auc_mean"),
+            xgb_res.get("cv_direction_acc"),
+            xgb_res.get("deployed"),
         )
 
         logger.info("Training LSTM (H=%d, epochs=%d, batch=%d) -> %s", horizon, args.epochs, args.batch_size, lstm_dir)
@@ -112,7 +99,8 @@ def main():
             panel, epochs=args.epochs, batch_size=args.batch_size, patience=args.patience
         )
         logger.info(
-            "  LSTM H=%d: %s", horizon,
+            "  LSTM H=%d: %s",
+            horizon,
             {k: lstm_res.get(k) for k in ("best_val_loss", "best_dir_acc", "best_epoch", "total_epochs")},
         )
 

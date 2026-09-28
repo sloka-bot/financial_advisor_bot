@@ -1,36 +1,4 @@
-"""
-evaluate_deployed.py
-
-Evaluate the deployed model types against fair baselines on matched,
-chronological, leakage-free test data, so the deployed model types are evaluated
-out-of-sample rather than only the experimental variants.
-
-Design (mirrors the deployed tasks, not the experiment regressor):
-  * Split unique calendar dates once: first (1-test_frac) = development, last
-    test_frac = untouched final test. An H-session embargo drops dev dates whose forward
-    label reaches into the test block. Preprocessing is fit on the development split only.
-  * CLASSIFIER track (the deployed XGBoost = P(rise) direction classifier):
-      baselines  - majority-class, logistic regression (technical)
-      models     - XGBoost technical, XGBoost technical+sentiment
-      report     - balanced accuracy, ROC-AUC, confusion matrix, class balance
-      calibration- isotonic fitted on a DEV calibration slice, then Brier + ECE
-                   (raw vs calibrated) on the test block
-  * REGRESSION track (the deployed LSTM = horizon-return regressor):
-      baselines  - zero-return, dev historical-mean return
-      model      - XGBoost regressor (always) and, with --with-lstm, the actual
-                   LSTMForecaster retrained on dev and scored on test
-      report     - MAE, RMSE, directional accuracy
-  * Sentiment contribution and model-vs-baseline gaps get a paired, date-grouped
-    bootstrap CI on matched (date, ticker) rows (experiments.paired_date_bootstrap).
-
-Everything is retrained under the clean split here; we do NOT score the on-disk
-deployed weights, because those were fit on all history and have no clean holdout.
-This evaluates the model the app uses, out-of-sample.
-
-Usage:
-    python scripts/evaluate_deployed.py --limit 80
-    python scripts/evaluate_deployed.py --sp500-only --with-lstm
-"""
+"""Evaluate the deployed model types against baselines on a chronological held-out test split."""
 
 import argparse
 import json
@@ -45,7 +13,7 @@ import pandas as pd
 sys.path.insert(0, str(Path(__file__).resolve().parent.parent))
 
 from backend.config.settings import PRIMARY_HORIZON, embargo_for
-from backend.data.contracts import json_safe
+from backend.data.contracts import to_jsonable
 from backend.evaluation import experiments as ex
 
 logging.basicConfig(level=logging.INFO, format="%(asctime)s  %(message)s", datefmt="%H:%M:%S")
@@ -65,7 +33,7 @@ def load_master_data(limit, sp500_only, start, end):
 
 
 def _date_split(panel, horizon, test_frac=0.25):
-    """(dev_dates, test_dates) with an H-session embargo on the dev side."""
+    """Return development and test dates with an H-session embargo on the development side."""
     dates = np.array(sorted(panel.index.unique()))
     if horizon < 1 or len(dates) < 2 * (horizon + 2):
         raise ValueError("Insufficient dates for a purged holdout")
@@ -94,7 +62,7 @@ def _confusion(y_true, y_pred):
 
 
 def _ece(probs, y, n_bins=10):
-    """Expected calibration error with equal-width bins (binning stated)."""
+    """Expected calibration error with equal-width bins."""
     probs = np.asarray(probs, float)
     y = np.asarray(y, float)
     edges = np.linspace(0, 1, n_bins + 1)
@@ -132,7 +100,7 @@ def classifier_track(panel, dev, test, tech, both, horizon=PRIMARY_HORIZON):
         "models": {},
     }
 
-    # majority-class baseline
+    # Majority-class baseline.
     maj = int(round(ytr.mean()))
     yp = np.full(len(yte), maj)
     out["models"]["majority_class"] = {
@@ -142,7 +110,7 @@ def classifier_track(panel, dev, test, tech, both, horizon=PRIMARY_HORIZON):
         "note": f"always predicts {'up' if maj else 'down'}",
     }
 
-    # logistic regression (technical)
+    # Logistic regression on technical features.
     trT, teT = _xy(panel, dev, tech, label_before=test.min()), _xy(panel, test, tech)
     scL = StandardScaler().fit(trT[tech].values)
     import warnings
@@ -172,7 +140,7 @@ def classifier_track(panel, dev, test, tech, both, horizon=PRIMARY_HORIZON):
         },
     }
 
-    # XGBoost classifier: technical, and technical+sentiment
+    # XGBoost classifier on technical and technical plus sentiment features.
     def xgb_clf(feat):
         trf, tef = _xy(panel, dev, feat, label_before=test.min()), _xy(panel, test, feat)
         sc = RobustScaler().fit(trf[feat].values)
@@ -205,8 +173,7 @@ def classifier_track(panel, dev, test, tech, both, horizon=PRIMARY_HORIZON):
         "confusion": _confusion(ytB, (pB > 0.5).astype(int)),
     }
 
-    # calibration: fit isotonic on a DEV calibration slice (last 15% of dev dates),
-    # refit the model on the earlier dev part, then score raw vs calibrated on TEST
+    # Calibration: isotonic fit on the last 15% of development dates, scored on test.
     devd = np.array(sorted(dev))
     n_cal = max(1, int(len(devd) * 0.15))
     fit_d, cal_d = pd.DatetimeIndex(devd[:-n_cal]), pd.DatetimeIndex(devd[-n_cal:])
@@ -244,7 +211,7 @@ def classifier_track(panel, dev, test, tech, both, horizon=PRIMARY_HORIZON):
             "bins": 10,
         }
 
-    # sentiment contribution: paired improvement (tech+sent vs tech) on matched rows
+    # Sentiment contribution: paired improvement on matched rows.
     a = pd.DataFrame({"y_true": teB["fwd_ret"].values, "y_pred": pB, "ticker": teB["ticker"].values}, index=teB.index)
     b = pd.DataFrame(
         {"y_true": ytT.astype(float), "y_pred": pT, "ticker": _xy(panel, test, tech)["ticker"].values},
@@ -257,32 +224,34 @@ def classifier_track(panel, dev, test, tech, both, horizon=PRIMARY_HORIZON):
     else:
         out["sentiment_contribution_paired_dir_hit_ci"] = {"unavailable": "No observed sentiment data"}
 
-    # Lift over a random classifier (0.5) so "slightly above random" is quantified.
+    # Lift over a random classifier.
     for _name, _m in out["models"].items():
         _bacc, _auc = _m.get("balanced_accuracy"), _m.get("roc_auc")
         _m["lift_vs_random"] = {
             "balanced_accuracy_minus_0.5": round(_bacc - 0.5, 4) if _bacc is not None else None,
             "roc_auc_minus_0.5": round(_auc - 0.5, 4) if _auc is not None else None,
         }
-    # Explicit class (im)balance on the test window, logged when skewed.
+    # Class balance on the test window.
     _up = int(yte.sum())
     _down = int(len(yte) - _up)
     _up_frac = float(yte.mean())
     out["class_imbalance"] = {
-        "up": _up, "down": _down, "up_fraction": round(_up_frac, 4),
+        "up": _up,
+        "down": _down,
+        "up_fraction": round(_up_frac, 4),
         "imbalanced": bool(abs(_up_frac - 0.5) > 0.1),
     }
     if abs(_up_frac - 0.5) > 0.1:
         logger.warning("Test-window class imbalance: up_fraction=%.3f (up=%d, down=%d)", _up_frac, _up, _down)
-    # Realized market regime over the test window - descriptive context (not a feature)
-    # for interpreting near-random accuracy.
+    # Realised market regime over the test window, for context only.
     _fwd = panel.loc[panel.index.isin(test), "fwd_ret"]
     _mean_fwd = float(_fwd.mean()) if len(_fwd) else float("nan")
     out["test_window_regime"] = {
         "mean_forward_return": round(_mean_fwd, 5) if np.isfinite(_mean_fwd) else None,
         "label": (
             ("bull" if _mean_fwd > 0.01 else "bear" if _mean_fwd < -0.01 else "sideways")
-            if np.isfinite(_mean_fwd) else None
+            if np.isfinite(_mean_fwd)
+            else None
         ),
         "note": "Realized mean forward return over the test window; context, not a predictor.",
     }
@@ -349,8 +318,7 @@ def regression_track(panel, dev, test, tech, both, with_lstm=False):
 
             # Fit the deployed LSTM architecture on development data only.
             dev_df = tr.copy()
-            # Isolated directory so evaluation NEVER overwrites the deployed model
-            # (the model class binds its own directory at construction).
+            # Separate directory so evaluation leaves the deployed model untouched.
             evaluation_dir = OUT / "lstm_evaluation"
             lf = LSTMForecaster(models_dir=evaluation_dir)
 
@@ -454,13 +422,9 @@ def main():
         "regression_track": regression_track(panel, dev, test, tech, both, with_lstm=args.with_lstm),
     }
     out_name = (
-        "deployed_evaluation.json"
-        if args.horizon == PRIMARY_HORIZON
-        else f"deployed_evaluation_h{args.horizon}.json"
+        "deployed_evaluation.json" if args.horizon == PRIMARY_HORIZON else f"deployed_evaluation_h{args.horizon}.json"
     )
-    (OUT / out_name).write_text(
-        json.dumps(json_safe(results), indent=2, default=str, allow_nan=False)
-    )
+    (OUT / out_name).write_text(json.dumps(to_jsonable(results), indent=2, default=str, allow_nan=False))
     logger.info(f"Results -> {OUT / out_name}")
     print(json.dumps({k: results[k] for k in ("split", "classifier_track", "regression_track")}, indent=2, default=str))
 

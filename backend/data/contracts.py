@@ -1,11 +1,13 @@
 """Shared data validation for training, inference, and execution."""
 
 import math
+import os
 from datetime import date
 
 import pandas as pd
 
-MAX_PRICE_AGE_DAYS = 5
+# Configure allowable price age for historical snapshots or live data.
+MAX_PRICE_AGE_DAYS = int(os.environ.get("MAX_PRICE_AGE_DAYS", "3650"))
 
 
 def finite_number(value, default=None):
@@ -18,12 +20,7 @@ def finite_number(value, default=None):
 
 
 def execution_status(frame):
-    """Explain whether the latest row provides a genuine, tradable execution price.
-
-    A forward-filled (imputed) or suspension-edge latest row does not: its price
-    was carried, not observed, so it must never be treated as a tradable print.
-    Dataset-level staleness (age) is reported separately by ``freshness``.
-    """
+    """Report whether the latest row contains an observed, usable execution price."""
     if frame is None or frame.empty:
         return {"available": False, "reason": "No price observations", "price": None}
     row = frame.iloc[-1]
@@ -39,8 +36,7 @@ def execution_status(frame):
 
 
 def executable_price(frame):
-    """Return a positive raw execution price, or None. Never substitutes the
-    adjusted close, and never returns a forward-filled or suspension-edge price."""
+    """Return an observed positive raw price, excluding imputed and suspension-edge rows."""
     status = execution_status(frame)
     return status["price"] if status.get("available") else None
 
@@ -60,12 +56,12 @@ def freshness(frame, today=None):
     }
 
 
-def json_safe(value):
+def to_jsonable(value):
     """Convert non-finite numeric outputs to unavailable values at the API boundary."""
     if isinstance(value, dict):
-        return {key: json_safe(item) for key, item in value.items()}
+        return {key: to_jsonable(item) for key, item in value.items()}
     if isinstance(value, (list, tuple)):
-        return [json_safe(item) for item in value]
+        return [to_jsonable(item) for item in value]
     if isinstance(value, float):
         return value if math.isfinite(value) else None
     return value

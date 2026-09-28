@@ -1,15 +1,37 @@
 {
-  "cv_auc_mean": 0.9997,
-  "cv_auc_std": 0.0002,
+  "auc": 0.5052,
+  "cv_auc_mean": 0.5052,
+  "cv_auc_std": 0.0383,
   "cv_fold_aucs": [
-    0.9996,
-    0.9995,
-    1.0,
-    1.0,
-    0.9995
+    0.4529,
+    0.529,
+    0.5523,
+    0.4868
   ],
-  "cv_direction_acc": 0.9998,
-  "n_features": 45,
-  "n_samples": 19270,
-  "trained_at": "2026-06-22T19:57:57.003026"
+  "cv_ran": true,
+  "cv_direction_acc": 0.5531,
+  "best_iteration": 2,
+  "early_stopping": true,
+  "n_features": 44,
+  "n_samples": 1320264,
+  "trained_at": "2026-09-27T09:19:56.158842",
+  "horizon": 21,
+  "date_range": [
+    "2010-10-18",
+    "2023-12-29"
+  ],
+  "hyperparameters": {
+    "n_estimators": 600,
+    "max_depth": 6,
+    "learning_rate": 0.05,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "min_child_weight": 3,
+    "gamma": 0.1,
+    "reg_alpha": 0.1,
+    "reg_lambda": 1.0,
+    "early_stopping_rounds": 30
+  },
+  "version": 2,
+  "deployed": true
 }

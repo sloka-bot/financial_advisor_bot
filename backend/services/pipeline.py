@@ -29,19 +29,7 @@ def run_training_pipeline(
     queue_recommendations,
     drift_monitor,
 ):
-    """Background task that runs the full data and training pipeline.
-
-    On the first run it downloads full price history and trains both models
-    from scratch. On subsequent runs it fetches only new rows and re-runs the
-    leakage-safe training (XGBoost retrains through its walk-forward + deploy
-    gate; the LSTM fine-tunes with a validation/rollback gate).
-
-    Universe: the training universe is the POINT-IN-TIME S&P 500 membership over
-    the whole history window, not today's constituents. Using today's members and
-    training back to 2010 would be survivorship bias (only companies that survived
-    in the index are seen). eligible_between(HISTORY_START, today) includes names
-    that were members at any time in the window, including ones later removed.
-    """
+    """Prepare historical-member data, train models and refresh current-member recommendations."""
     from backend.infra.reproducibility import set_seed
 
     set_seed(42)
@@ -54,9 +42,7 @@ def run_training_pipeline(
         try:
             all_tickers = universe_builder.eligible_between(settings.HISTORY_START, _today)
         except Exception as e:
-            # Live-app fallback ONLY, so the product keeps working when the membership
-            # history is unavailable. This reverts to CURRENT constituents and is
-            # survivorship-biased; the research/evaluation path is strict and refuses it.
+            # Allow a labelled current-member fallback only in the live pipeline.
             pit_available = False
             logger.warning(
                 f"Point-in-time universe unavailable ({e}); live app falling back to "
@@ -96,16 +82,17 @@ def run_training_pipeline(
         news_collector.get_universe_news(featured, progress_cb=_stage_progress("news", "Collecting news", 48, 60))
 
         update_pipeline("sentiment", "Running FinBERT sentiment analysis", 60)
-        sent_r = sentiment.analyze_universe(featured, progress_cb=_stage_progress("sentiment", "FinBERT sentiment", 60, 72))
-        # A ticker whose sentiment scoring FAILED this run is excluded from fusion, so
-        # a stale sentiment file from an earlier run is never merged as if current (a
-        # failed inference is not valid no-news data).
+        sent_r = sentiment.analyze_universe(
+            featured, progress_cb=_stage_progress("sentiment", "FinBERT sentiment", 60, 72)
+        )
+        # Exclude failed sentiment runs from fusion to avoid reusing stale scores.
         sent_failed = set(sent_r.get("failed", [])) if isinstance(sent_r, dict) else set()
         fuse_inputs = [t for t in featured if t not in sent_failed]
         if sent_failed:
             logger.warning(
                 "Excluding %d ticker(s) with failed sentiment from fusion: %s",
-                len(sent_failed), sorted(sent_failed),
+                len(sent_failed),
+                sorted(sent_failed),
             )
 
         update_pipeline("fusion", "Merging price features and sentiment scores", 72)
@@ -117,11 +104,7 @@ def run_training_pipeline(
             update_pipeline("error", "No fused data available - check logs", error="no_data")
             return
 
-        # Point-in-time row eligibility: each stock contributes training rows only
-        # for the dates it was actually an S&P 500 member (point-in-time eligibility),
-        # so a delisted name contributes only its in-index rows.
-        # Strict only when point-in-time membership actually loaded; if the live
-        # fallback to current members was used, degrade rather than raise.
+        # Filter training rows by historical membership when membership records are available.
         combined = universe_builder.filter_eligible_rows(combined, strict=pit_available)
 
         if already_trained:
@@ -143,8 +126,7 @@ def run_training_pipeline(
 
             update_pipeline("lstm", "Training LSTM from scratch (50 epochs, early stopping)", 90)
 
-            # Report each epoch so the UI progress bar (90 -> 99) moves during the
-            # long CPU LSTM run instead of appearing frozen at 90%.
+            # Publish epoch progress during LSTM training.
             def _lstm_progress(epoch, total, val_loss, dir_acc):
                 pct = 90 + int(9 * epoch / max(1, total))
                 update_pipeline(
@@ -157,8 +139,7 @@ def run_training_pipeline(
         update_pipeline("recommendations", "Preparing recommendations", 99, tickers=fused)
 
         if req.user_id and user_store.get(req.user_id):
-            # Live recommendations use CURRENT index membership, not the whole
-            # historical training universe (which includes former members).
+            # Use current membership for live recommendations.
             current_members = set(universe_builder.members())
             live_universe = [t for t in fused if t in current_members] or fused
             queue_recommendations(req.user_id, live_universe, req.risk_profile, req.budget, pipeline_internal=True)

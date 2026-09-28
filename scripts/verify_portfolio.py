@@ -1,19 +1,4 @@
-"""
-verify_portfolio.py
-
-Automated checks for the portfolio-output guarantees. Run:
-    python scripts/verify_portfolio.py
-Exits non-zero if any check fails, so it can gate a release.
-
-Checks:
-  1. Purchases, fees and remaining cash reconcile to the budget.
-  2. Holdings never go negative (no shorting).
-  3. Position limits still hold after whole-share rounding.
-  4. Forecast returns are distinguished from realised backtest returns.
-  5. Explanations never invent a price/probability/return (+ a negative control).
-  6. A "no change" / "insufficient evidence" recommendation is possible.
-  7. Beginner and technical modes expose identical numbers.
-"""
+"""Run automated checks on portfolio outputs and exit non-zero on failure."""
 
 import sys
 from pathlib import Path
@@ -49,27 +34,27 @@ def main():
         r = opt.optimize(tickers, mu, cov, prof)
         alloc = opt.to_shares(r["weights"], prices, budget, allow_fractional=False, fee_rate=0.001, fee_flat=0.0)
 
-        # 1. reconciliation
+        # 1. Reconciliation.
         recon = abs(alloc["invested"] + alloc["fees"] + alloc["cash_remaining"] - budget)
         check(f"[{prof}] reconcile invested+fees+cash==budget", recon < 0.01, f"residual ${recon:.4f}")
 
-        # 2. no negative holdings (no shorting)
+        # 2. No negative holdings.
         neg = [h for h in alloc["holdings"] if h["shares"] < 0]
         check(f"[{prof}] no negative holdings", len(neg) == 0)
 
-        # 3. position limits after rounding
+        # 3. Position limits after rounding.
         cap = cons["max_weight"] * 100
         over = [h for h in alloc["holdings"] if h["realised_weight_pct"] > cap + 0.5]
         check(f"[{prof}] position cap {cap:.0f}% holds after rounding", len(over) == 0, f"{len(over)} over cap")
 
-        # min cash floor respected (rounding only leaves MORE cash)
+        # Minimum cash floor.
         check(
             f"[{prof}] min-cash floor respected",
             alloc["cash_weight_pct"] >= cons["min_cash"] * 100 - 0.5,
             f"cash {alloc['cash_weight_pct']}% ≥ {cons['min_cash'] * 100:.0f}%",
         )
 
-    # 4. forecast vs realised distinction
+    # 4. Forecast versus realised returns.
     facts = em.make_facts(
         "AAA",
         "BUY",
@@ -99,13 +84,13 @@ def main():
     )
     check("forecast vs realised clearly separated", dist)
 
-    # 5. no-invention guard + negative control
-    ok_true, _ = em.validate_no_invention(tech, facts)
-    ok_false, bad = em.validate_no_invention(tech + " Guaranteed 999.99% return.", facts)
-    check("explanation contains no invented numbers", ok_true)
-    check("invention guard catches a fake number (control)", (not ok_false) and 999.99 in bad)
+    # 5. Unsupported-number check with a negative control.
+    ok_true, _ = em.validate_numeric_claims(tech, facts)
+    ok_false, bad = em.validate_numeric_claims(tech + " Guaranteed 999.99% return.", facts)
+    check("explanation contains no unsupported numbers", ok_true)
+    check("unsupported-number check catches a fake number (control)", (not ok_false) and 999.99 in bad)
 
-    # 6. no-change / insufficient-evidence possible
+    # 6. No-change recommendation.
     nc = em.make_facts("BBB", "NO_CHANGE", horizon_days=21, current_weight_pct=10.0, target_weight_pct=10.0)
     ie = em.make_facts("CCC", "INSUFFICIENT_EVIDENCE", horizon_days=21)
     check("NO_CHANGE recommendation renders", bool(em.render(nc, "beginner")) and bool(em.render(nc, "technical")))
@@ -114,8 +99,8 @@ def main():
         bool(em.render(ie, "beginner")) and bool(em.render(ie, "technical")),
     )
 
-    # 7. beginner/technical numeric parity
-    check("beginner & technical modes expose identical numbers", em.parity_ok(facts))
+    # 7. Beginner and technical numeric parity.
+    check("beginner & technical modes expose identical numbers", em.explanation_numbers_supported(facts))
 
     n_fail = sum(1 for _, ok, _ in results if not ok)
     print("\n" + "=" * 56)

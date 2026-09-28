@@ -1,19 +1,4 @@
-"""
-downloader.py
-
-Downloads and caches historical OHLCV price data from Yahoo Finance.
-
-Unlike a plain `auto_adjust=True` pull, this keeps both price views:
-
-  * open / high / low / close  -> split & dividend ADJUSTED (analytical) prices,
-    used to compute indicators so a split does not look like a 50% crash;
-  * close_unadj                -> the raw, UNADJUSTED close, i.e. the price an
-    order would actually have executed at, and the series used to detect splits
-    that were never applied.
-
-Full history is fetched on the first run; subsequent runs fetch only the new
-rows and merge them in.
-"""
+"""Download and cache adjusted OHLCV histories alongside raw closing prices."""
 
 import logging
 import random
@@ -40,9 +25,8 @@ class MarketDataDownloader:
         self.raw_dir = Path(raw_dir)
         self.raw_dir.mkdir(parents=True, exist_ok=True)
 
-    # ------------------------------------------------------------------ #
     def download_ticker(self, ticker, force=False):
-        """Download full history from HISTORY_START. Skip if already cached."""
+        """Download full history from HISTORY_START unless already cached."""
         path = self._path(ticker)
         if path.exists() and not force:
             logger.debug(f"{ticker}: already cached; use incremental to update")
@@ -50,7 +34,7 @@ class MarketDataDownloader:
         return self._fetch_range(ticker, FULL_HISTORY_START, datetime.now().strftime("%Y-%m-%d"), path)
 
     def download_ticker_incremental(self, ticker):
-        """Fetch only the sessions we do not have yet; full pull if no cache."""
+        """Fetch only missing sessions, or the full history without a cache."""
         path = self._path(ticker)
         existing = self._load_raw(path)
 
@@ -64,10 +48,7 @@ class MarketDataDownloader:
             logger.debug(f"{ticker}: up to date (last {last_date.date()})")
             return existing
 
-        # Re-fetch a small OVERLAP so we can detect a corporate action that
-        # re-scaled the whole adjusted history since we cached it. Adjusted OHLC is
-        # relative to the latest split/dividend, so appending freshly-adjusted rows
-        # onto stale-adjusted ones would leave a discontinuity at the seam.
+        # Refetch overlapping dates to detect corporate-action changes in cached prices.
         overlap_start = (last_date - pd.Timedelta(days=14)).strftime("%Y-%m-%d")
         end = datetime.now().strftime("%Y-%m-%d")
         new = self._fetch_range(ticker, overlap_start, end)
@@ -87,7 +68,7 @@ class MarketDataDownloader:
                 return self._fetch_range(ticker, FULL_HISTORY_START, end, path)
 
         merged = pd.concat([existing, new]).sort_index()
-        merged = merged[~merged.index.duplicated(keep="last")]  # re-fetched rows win over cached
+        merged = merged[~merged.index.duplicated(keep="last")]  # re-fetched rows replace cached ones
         merged.to_csv(path)
         added = max(0, len(merged) - len(existing))
         logger.info(f"{ticker}: refreshed overlap + added {added} rows (total {len(merged)})")
@@ -118,7 +99,6 @@ class MarketDataDownloader:
                 progress_cb(i, n)
         return results
 
-    # ------------------------------------------------------------------ #
     def _fetch_range(self, ticker, start, end, save_path=None):
         """Download with retries and derive adjusted + unadjusted price views."""
         for attempt in range(1, 4):
@@ -160,7 +140,7 @@ class MarketDataDownloader:
 
         raw_close = pd.to_numeric(raw["close"], errors="coerce")
         adj_close = pd.to_numeric(raw.get("adj close", raw["close"]), errors="coerce")
-        # per-day cumulative adjustment factor (splits + dividends)
+        # daily cumulative adjustment factor for splits and dividends
         factor = (adj_close / raw_close.replace(0, np.nan)).fillna(1.0)
 
         out = pd.DataFrame(index=raw.index)

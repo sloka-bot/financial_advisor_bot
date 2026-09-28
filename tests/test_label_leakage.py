@@ -1,9 +1,4 @@
-"""
-test_no_leakage.py
-
-Regression checks for forward labels, excluded target columns and train-only
-scaling. These synthetic checks complement the full-data evaluation audit.
-"""
+"""Checks for forward labels, excluded target columns and train-only scaling."""
 
 import os
 import sys
@@ -15,17 +10,16 @@ import pandas as pd
 from backend.config.settings import PREDICTION_HORIZON
 
 
-def test_target_is_strictly_forward():
-    """target_return[t] must be the FUTURE horizon return, so it can never be
-    known at prediction time (correct target, not leakage)."""
+def test_target_is_forward_return():
+    """target_return[t] is the future horizon return."""
     close = pd.Series(np.linspace(100, 200, 80))
     tgt = close.shift(-PREDICTION_HORIZON) / close - 1.0
     assert abs(tgt.iloc[0] - (close.iloc[PREDICTION_HORIZON] / close.iloc[0] - 1)) < 1e-9
-    assert tgt.iloc[-1] != tgt.iloc[-1]  # last H rows are NaN -> dropped in fusion
+    assert tgt.iloc[-1] != tgt.iloc[-1]  # last H rows are NaN and dropped in fusion
 
 
 def test_features_exclude_label_columns():
-    """The next-move label must never be handed to the model as a feature."""
+    """The next-move label is excluded from model features."""
     from backend.prediction.xgboost_model import EXCLUDED, XGBoostForecaster
 
     for col in ("target_return", "target_direction", "ticker", "close"):
@@ -53,13 +47,11 @@ def test_labels_sourced_from_target_direction():
 
 
 def test_lstm_scaler_fit_on_train_rows_only():
-    """MinMax scaler must be fit on training rows only. Data is engineered so
-    the global maxima fall in the validation slice; a train-only fit therefore
-    has strictly smaller data_max_ than a leaky all-rows fit."""
+    """The scaler is fitted on training rows only."""
     from backend.prediction.lstm_model import TRAIN_FEATURES, LSTMForecaster
 
     n = 200
-    feats = {c: np.linspace(0, 1, n) for c in TRAIN_FEATURES}  # increasing -> max in val slice
+    feats = {c: np.linspace(0, 1, n) for c in TRAIN_FEATURES}  # increasing, so the maximum is in validation
     d = dict(feats)
     d["ticker"] = ["A"] * n
     d["target_return"] = np.zeros(n)
@@ -69,6 +61,6 @@ def test_lstm_scaler_fit_on_train_rows_only():
     cut = int(n * 0.8)
     train_max = np.asarray([feats[c][:cut].max() for c in TRAIN_FEATURES])
     global_max = np.asarray([feats[c].max() for c in TRAIN_FEATURES])
-    assert np.allclose(m.scaler.data_max_, train_max)  # fit on train only
+    assert np.allclose(m.scaler.data_max_, train_max)  # fit on training rows
     assert np.all(m.scaler.data_max_ <= global_max + 1e-9)
-    assert np.any(m.scaler.data_max_ < global_max - 1e-6)  # strictly less -> no val leak
+    assert np.any(m.scaler.data_max_ < global_max - 1e-6)  # smaller than an all-rows fit

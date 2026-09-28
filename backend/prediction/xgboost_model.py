@@ -1,25 +1,5 @@
-"""
-XGBoostForecaster - daily return direction classifier for stock price prediction.
-
-Trained with walk-forward cross-validation: each test fold covers one calendar
-year and the training set is all data strictly prior to that year. The scaler is
-fitted on training rows only and an H-session embargo drops the training rows whose
-forward label would reach into the test year, which controls the main leakage
-paths in the training split.
-
-After the walk-forward folds, a final model is trained on THREE disjoint,
-date-based blocks (train / early-stopping / calibration) so no block is reused.
-Isotonic regression (Niculescu-Mizil & Caruana, 2005) is fitted on the separate
-calibration block. How closely an 80%-confidence really matches ~80%-accuracy is
-an empirical question the evaluation measures on that held-out block, not a
-property asserted here.
-
-Model versioning is handled by ModelRegistry, which records a new model as the
-best only when its walk-forward AUC is at least the best-ever AUC, so the
-promotion baseline never drifts downward over successive retrains.
-
-Author: Sloka Mudunuru
-"""
+"""Train and calibrate a direction classifier with chronological validation and versioning."""
+# Author: Sloka Mudunuru
 
 import json
 import logging
@@ -55,7 +35,7 @@ EXCLUDED = {
     "daily_return",
     "target_return",
     "target_direction",
-    "ticker",  # labels/meta must never be features
+    "ticker",  # label and metadata columns excluded from features
     "extreme_move_flag",
     "potential_split_flag",
     "penny_stock_flag",
@@ -71,21 +51,17 @@ EXCLUDED = {
 
 
 def _make_labels(df, horizon=PREDICTION_HORIZON):
-    """Binary up/down label for the configured horizon. Prefers the
-    fusion-provided target_direction (single source of truth); falls back
-    to computing the forward return if the column is absent."""
+    """Use existing direction labels or compute them from horizon returns."""
     if "target_direction" in df.columns:
         return df["target_direction"].astype(float)
     fwd = df["close"].shift(-horizon) / df["close"] - 1.0
     return (fwd > 0).astype(float).where(fwd.notna())
 
 
-# Walk-forward: how many recent years to use as test folds
-# e.g. last 4 years of data are each used as a test set in turn
+# Use recent calendar years as expanding-window validation folds.
 WALK_FORWARD_FOLDS = 4
 
-# A model must be trained on at least this many labelled rows before it is eligible
-# to deploy, in addition to the walk-forward validation requirement.
+# Require sufficient labelled training rows before deployment.
 MIN_DEPLOY_SAMPLES = 500
 
 
@@ -101,13 +77,10 @@ class XGBoostForecaster:
         self.scaler = RobustScaler()
         self._feat_cols = []
 
-    def train(self, df: pd.DataFrame, *, persist: bool = True, force_deploy: bool = False, register: bool = True) -> dict:
-        """
-        Full training pipeline:
-        1. Walk-forward cross-validation (reporting AUC per fold)
-        2. Final model fitted on separate training and early-stopping date blocks
-        3. Save versioned copy and update best if improved
-        """
+    def train(
+        self, df: pd.DataFrame, *, persist: bool = True, force_deploy: bool = False, register: bool = True
+    ) -> dict:
+        """Validate across time, fit the final classifier and record its deployment decision."""
         import xgboost as xgb
 
         from backend.infra.model_registry import ModelRegistry
@@ -124,8 +97,7 @@ class XGBoostForecaster:
         y = labels[mask].values
 
         if len(X) < 50:
-            # Too little data for a real estimate: keep any deployed model and only
-            # fit a cold-start bootstrap when none exists yet.
+            # Keep deployed models when data is insufficient; bootstrap only on a cold start.
             if (self.models_dir / "model.pkl").exists():
                 logger.warning(f"XGBoost: only {len(X)} rows - keeping the existing model, not retraining")
                 return {
@@ -135,9 +107,9 @@ class XGBoostForecaster:
                     "deployed": False,
                 }
             logger.warning(f"XGBoost: only {len(X)} rows - cold-start bootstrap fit (NOT walk-forward validated)")
-            Xs = self.scaler.fit_transform(X)  # fit AND use the scaled matrix
+            Xs = self.scaler.fit_transform(X)  # fit and use the scaled matrix
             self.model = self._make_classifier()
-            self.model.fit(Xs, y, verbose=False)  # predict_proba_up scales, so train scaled too
+            self.model.fit(Xs, y, verbose=False)  # predict_proba_up scales inputs
             self._save()
             return {
                 "cv_auc_mean": None,
@@ -147,48 +119,31 @@ class XGBoostForecaster:
                 "deployed": True,
             }
 
-        # -- Stage 2: Walk-forward validation --
+        # Walk-forward validation.
         fold_aucs, fold_dirs = self._walk_forward_cv(df, feat_cols)
 
-        # -- Stage 3: Final model with leakage-free, DATE-BASED splits --
-        # Rows are ordered by ticker then date, so a row-fraction cut would split
-        # by stock rather than by time. Split on unique calendar date into three
-        # disjoint blocks so model selection and calibration never share data:
-        #   train  -> fits the scaler + the trees
-        #   es_val -> early-stopping signal only
-        #   calib  -> isotonic calibration only
-        # An H-session embargo drops the training dates whose forward label would overlap
-        # es_val. (The walk-forward folds above remain the out-of-sample estimate.)
+        # Separate training, early stopping and calibration by date with label embargoes.
         sub = df.loc[mask]
         y_ser = pd.Series(y, index=sub.index)
         udates = np.array(sorted(sub.index.unique()))
         emb = embargo_for(self.horizon)
 
-        # Three disjoint, date-based blocks (train / early-stopping / calibration)
-        # with an H-session embargo, via the shared temporal-split utility so every
-        # model derives these boundaries identically.
+        # Build the three chronological blocks through the shared split utility.
         tr_dates, es_dates, cal_dates = date_split_three(udates, embargo=emb)
 
         def _rows(dts):
             m = sub.index.isin(dts)
             return sub.loc[m, feat_cols].values, y_ser.values[m]
+
         X_tr, y_tr = _rows(tr_dates)
         X_es, y_es = _rows(es_dates)
         X_cal, y_cal = _rows(cal_dates)
 
         self.scaler = RobustScaler()
         if len(X_tr) >= 20 and len(X_es) >= 10:
-            X_tr_sc = self.scaler.fit_transform(X_tr)  # scaler fit on training rows only
+            X_tr_sc = self.scaler.fit_transform(X_tr)  # scaler fitted on training rows only
             X_es_sc = self.scaler.transform(X_es)
-            # Hyperparameters chosen for noisy, low-signal financial data and held
-            # fixed across folds for a fair comparison. n_estimators=600 is an upper
-            # bound; the effective count is set by early stopping on the held-out
-            # es_val block, not tuned on the test data. Shallow trees (depth 6),
-            # row/column subsampling (0.8) and L1/L2 penalties (0.1 / 1.0) plus
-            # gamma and min_child_weight control the overfitting that unregularised
-            # boosting suffers on financial features (Chen & Guestrin, 2016). lr=0.05
-            # is a standard conservative step. These are documented, not searched on
-            # the test set. Any sensitivity study must be reported separately.
+            # Keep regularised hyperparameters fixed across folds; validation selects tree count.
             self.model = xgb.XGBClassifier(
                 n_estimators=600,
                 max_depth=6,
@@ -222,8 +177,7 @@ class XGBoostForecaster:
             best_iteration = self.model.n_estimators
             early_stopping = False
 
-        # Fit calibration on a separate block from early stopping. Held-out
-        # Brier score and calibration error determine whether it improves probabilities.
+        # Fit probability calibration on a block separate from early stopping.
         self.calibrated_model = None
         if len(X_cal) >= 10:
             try:
@@ -237,9 +191,7 @@ class XGBoostForecaster:
             except Exception as e:
                 logger.warning(f"Calibration skipped ({e})")
 
-        # Only a run with real walk-forward folds has an out-of-sample AUC.
-        # When none ran we report auc=None (never a placeholder 0.5) so a broken or
-        # tiny run can't masquerade as a 0.5 model and outrank a real one.
+        # Report unavailable AUC when no validation folds were scored.
         cv_ran = bool(fold_aucs)
         auc_mean = round(float(np.mean(fold_aucs)), 4) if cv_ran else None
         auc_std = round(float(np.std(fold_aucs)), 4) if cv_ran else None
@@ -253,19 +205,31 @@ class XGBoostForecaster:
             "cv_ran": cv_ran,
             "cv_direction_acc": dir_mean,
             "best_iteration": best_iteration,
-            "early_stopping": early_stopping,  # False = date split too small; methodology note
+            "early_stopping": early_stopping,  # False when the date split is too small
             "n_features": len(feat_cols),
             "n_samples": int(len(y)),
             "trained_at": datetime.now().isoformat(),
             "horizon": self.horizon,
-            "date_range": [str(df.index.min())[:10], str(df.index.max())[:10]] if isinstance(df.index, pd.DatetimeIndex) else None,
-            "hyperparameters": {"n_estimators": 600, "max_depth": 6, "learning_rate": 0.05, "subsample": 0.8, "colsample_bytree": 0.8, "min_child_weight": 3, "gamma": 0.1, "reg_alpha": 0.1, "reg_lambda": 1.0, "early_stopping_rounds": 30},
+            "date_range": [str(df.index.min())[:10], str(df.index.max())[:10]]
+            if isinstance(df.index, pd.DatetimeIndex)
+            else None,
+            "hyperparameters": {
+                "n_estimators": 600,
+                "max_depth": 6,
+                "learning_rate": 0.05,
+                "subsample": 0.8,
+                "colsample_bytree": 0.8,
+                "min_child_weight": 3,
+                "gamma": 0.1,
+                "reg_alpha": 0.1,
+                "reg_lambda": 1.0,
+                "early_stopping_rounds": 30,
+            },
         }
 
-        # -- Stages 5-7: Versioning and deployment gate --
+        # Versioning and deployment gate.
         if persist and not register:
-            # Side model (e.g. an alternate-horizon model): save artifacts into this
-            # model's own directory but never touch the shared 21-day registry.
+            # Save alternate-horizon artifacts without updating the primary model registry.
             self._save()
             results["deployed"] = True
             results["registered"] = False
@@ -273,9 +237,7 @@ class XGBoostForecaster:
                 json.dump(results, f, indent=2)
             return results
         if not persist:
-            # Dry run (e.g. the --limit smoke test): report metrics only and never
-            # touch the production registry or overwrite the deployed artifacts, so
-            # a small sanity-check run can't be promoted over a real full model.
+            # Return dry-run metrics without changing deployed artifacts or registry entries.
             logger.info("XGBoost: dry run (persist=False) - metrics only; registry and artifacts left untouched")
             results["deployed"] = False
             results["persisted"] = False
@@ -284,9 +246,7 @@ class XGBoostForecaster:
         existing = registry.get_best("xgboost")
         enough_data = len(y) >= MIN_DEPLOY_SAMPLES
         if (not cv_ran or not enough_data) and existing is not None:
-            # No out-of-sample estimate, or too little data, AND a real model
-            # already exists: keep the deployed model rather than replace it with an
-            # unvalidated / underpowered candidate.
+            # Retain the deployed model when the candidate lacks sufficient validation evidence.
             logger.warning(
                 f"XGBoost: candidate not deployable (cv_ran={cv_ran}, "
                 f"n={len(y)} < {MIN_DEPLOY_SAMPLES}={not enough_data}) - "
@@ -309,14 +269,11 @@ class XGBoostForecaster:
             results["deployed"] = True
             logger.info(f"XGBoost v{version} deployed (AUC={auc_mean}{' [forced]' if force_deploy else ''})")
         else:
-            # Reject the candidate and restore the deployed model FROM DISK. We must
-            # drop the in-memory candidate first: _loaded() returns early when a model
-            # is already in memory, so without this the rejected candidate would stay
-            # active despite metadata saying it was rejected.
+            # Clear the rejected in-memory candidate before reloading deployed artifacts.
             logger.info("XGBoost: new model did not beat current best - reverting to deployed model")
             self.model = None
             self.calibrated_model = None
-            self._loaded()  # reloads the saved best (model+scaler+calibration+features)
+            self._loaded()  # reload the saved best artifacts
             results["deployed"] = False
 
         with open(self.models_dir / "training_results.json", "w") as f:
@@ -324,18 +281,7 @@ class XGBoostForecaster:
         return results
 
     def _walk_forward_cv(self, df: pd.DataFrame, feat_cols: list):
-        """
-        Walk-forward validation using calendar years as fold boundaries.
-
-        For test year T:
-          Train: all rows with year < T  (expanding window - more data each fold)
-          Test:  all rows with year == T (one full year of unseen data)
-
-        The scaler is fit on training rows ONLY. This is critical:
-        fitting the scaler on test data would constitute data leakage.
-
-        Reference: Bailey et al. (2014) "The Probability of Backtest Overfitting"
-        """
+        """Evaluate annual test folds using earlier training data and label embargoes."""
         import xgboost as xgb
 
         if not isinstance(df.index, pd.DatetimeIndex):
@@ -347,10 +293,10 @@ class XGBoostForecaster:
         labels = _make_labels(df, self.horizon)
         finite = df[feat_cols].apply(lambda c: np.isfinite(c)).all(axis=1)
         valid = finite & labels.notna()
-        emb = embargo_for(self.horizon)  # sessions to purge at each year boundary
+        emb = embargo_for(self.horizon)  # sessions purged at each year boundary
 
         years = sorted(df.index.year.unique())
-        # Take the last N years as test folds; each needs 1+ years training before it
+        # Use the last N years as test folds, each with at least a year of training data.
         test_years = years[max(1, len(years) - WALK_FORWARD_FOLDS) :]
 
         fold_aucs = []
@@ -360,9 +306,7 @@ class XGBoostForecaster:
             train_mask = (df.index.year < test_year) & valid
             test_mask = (df.index.year == test_year) & valid
 
-            # PURGE: drop the last `emb` training sessions before the test year - their
-            # H-session forward labels extend INTO the test year, so leaving them in
-            # leaks the test period's outcomes into training.
+            # Purge training labels that would extend into the test year.
             if emb > 0:
                 tr_dates = np.array(sorted(df.index[train_mask].unique()))
                 if len(tr_dates) > emb:
@@ -379,11 +323,11 @@ class XGBoostForecaster:
             X_te = df.loc[test_mask, feat_cols].values
             y_te = labels[test_mask].values
 
-            # double-check after masking - sizes can change
+            # Recheck sizes after masking.
             if len(X_tr) < 50 or len(X_te) < 5:
                 continue
 
-            # Scaler fitted on TRAIN only - the test fold is never seen here
+            # Scaler fitted on training rows only.
             fold_scaler = RobustScaler()
             X_tr_sc = fold_scaler.fit_transform(X_tr)
             X_te_sc = fold_scaler.transform(X_te)
@@ -404,11 +348,7 @@ class XGBoostForecaster:
                 n_jobs=1,
                 verbosity=0,
             )
-            # Early stopping must not see the test fold, and the ES slice must be a
-            # LATER TIME than the training core - not the last 15% of ROWS. Rows are
-            # ordered ticker-then-date, so a row cut would be one ticker's whole
-            # history, not a later period. Split by DATE: the newest ~15% of training
-            # dates form the ES slice, with an H-session embargo between core and ES.
+            # Reserve later training dates for early stopping and embargo the boundary.
             uniq = np.array(sorted(tr_row_dates.unique()))
             n_v = max(1, int(len(uniq) * 0.15))
             es_set = set(uniq[-n_v:])
@@ -428,7 +368,7 @@ class XGBoostForecaster:
             try:
                 auc = float(roc_auc_score(y_te, proba))
             except ValueError:
-                auc = None  # undefined (single-class fold) is not 0.5; exclude from the mean
+                auc = None  # single-class folds are excluded from the mean
             dir_acc = float(np.mean((proba > 0.5) == y_te))
 
             if auc is not None:
@@ -462,21 +402,11 @@ class XGBoostForecaster:
         )
 
     def update(self, df: pd.DataFrame) -> dict:
-        """Retrain XGBoost on the latest data through the SAME leakage-safe path as
-        train() (date-based train / early-stopping / calibration split, embargo,
-        walk-forward and deploy gates).
-
-update() delegates to train() so a refresh runs the same leakage-safe path
-        (a full retrain, not an incremental warm-start).
-        """
+        """Retrain through the full chronological validation and deployment workflow."""
         return self.train(df)
 
     def predict_proba_up(self, df: pd.DataFrame) -> float | None:
-        """Calibrated probability that the stock RISES over the model's horizon
-        (PREDICTION_HORIZON trading days), in [0, 1], or None.
-
-        A direction classifier reports a probability, not a return.
-        """
+        """Return the calibrated horizon up-probability, or None when unavailable."""
         warnings.filterwarnings("ignore", message="X has feature names")
         if not self._loaded():
             return None
@@ -497,12 +427,7 @@ update() delegates to train() so a refresh runs the same leakage-safe path
             return None
 
     def predict_with_uncertainty(self, df: pd.DataFrame) -> dict:
-        """Calibrated probability of a rise plus a real classifier confidence.
-
-        XGBoost is a direction classifier, so this reports a PROBABILITY - never a
-        return or a return interval. `confidence` is the distance from a coin-flip
-        (0 at p=0.5, 1 at p=0 or 1).
-        """
+        """Return up-probability and its distance from 0.5; this is not a return interval."""
         empty = {"prob_up": None, "confidence": 0.0, "calibrated": False, "interpretation": None}
         if not self._loaded():
             return dict(empty)
@@ -516,7 +441,7 @@ update() delegates to train() so a refresh runs the same leakage-safe path
             up_prob = float(self.calibrated_model.predict([raw])[0]) if self.calibrated_model is not None else raw
             return {
                 "prob_up": round(up_prob, 4),
-                "confidence": round(abs(up_prob - 0.5) * 2, 4),  # 0=coin-flip .. 1=certain
+                "confidence": round(abs(up_prob - 0.5) * 2, 4),  # 0 is a coin flip, 1 is certain
                 "calibrated": self.calibrated_model is not None,
                 "interpretation": "UP" if up_prob > 0.5 else "DOWN",
             }
@@ -542,23 +467,19 @@ update() delegates to train() so a refresh runs the same leakage-safe path
         return all_features(df.columns)
 
     def _save(self):
-        # Save current best
+        # Save the current model.
         with open(self.models_dir / "model.pkl", "wb") as f:
             pickle.dump(self.model, f)
         with open(self.models_dir / "scaler.pkl", "wb") as f:
             pickle.dump(self.scaler, f)
         with open(self.models_dir / "feat_cols.pkl", "wb") as f:
             pickle.dump(self._feat_cols, f)
-        # Compatibility fingerprint (library versions + feature-schema hash),
-        # verified on load so an artifact from an incompatible environment or a
-        # changed feature schema is rejected rather than silently deserialised.
+        # Save library and feature-schema compatibility metadata with the model.
         from backend.infra.model_registry import artifact_fingerprint
 
         with open(self.models_dir / "artifact_manifest.json", "w") as f:
             json.dump(artifact_fingerprint(self._feat_cols), f, indent=2)
-        # Keep the calibrator artifact CONSISTENT with the current model: write it
-        # when present, and DELETE any existing one when this model has none - so a
-        # restart can never reattach a stale calibrated.pkl to a newer model.
+        # Remove stale calibration artifacts when the saved model has no calibrator.
         cp = self.models_dir / "calibrated.pkl"
         if self.calibrated_model:
             with open(cp, "wb") as f:
@@ -566,15 +487,14 @@ update() delegates to train() so a refresh runs the same leakage-safe path
         elif cp.exists():
             cp.unlink()
 
-        # Keep timestamped copies in a dedicated archive directory so the models
-        # folder holds only the current production artifact.
+        # Store timestamped backups separately from active model artifacts.
         ts = datetime.now().strftime("%Y%m%d_%H%M%S")
         try:
             archive = self.models_dir / "archive"
             archive.mkdir(parents=True, exist_ok=True)
             shutil.copy(self.models_dir / "model.pkl", archive / f"model_{ts}.pkl")
         except Exception:
-            pass  # versioned backup is nice-to-have, not critical
+            pass  # backup failure is not fatal
 
     def _loaded(self) -> bool:
         if self.model:
@@ -600,9 +520,7 @@ update() delegates to train() so a refresh runs the same leakage-safe path
                     manifest = json.load(f)
                 ok, issues = check_artifact_compatibility(manifest, self._feat_cols)
                 if not ok:
-                    logger.error(
-                        "XGBoost artifact rejected as incompatible: %s", "; ".join(issues)
-                    )
+                    logger.error("XGBoost artifact rejected as incompatible: %s", "; ".join(issues))
                     self.model = None
                     self.scaler = None
                     self.calibrated_model = None

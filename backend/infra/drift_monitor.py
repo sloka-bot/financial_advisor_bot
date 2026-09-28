@@ -1,20 +1,8 @@
-"""
-Drift Monitor - detects when the live market has shifted away from training data.
-
-Monitors two signals that indicate the model may need retraining.
-  Feature drift: the live market's indicator distributions shift away from
-  what the model was trained on, measured by Z-score of the mean shift.
-  Performance drift: the 30-day recommendation win rate drops below a floor.
-
-  Markets are non-stationary (Lo, 2004). A model trained in a low-volatility
-  bull market will deteriorate in a high-volatility bear market even with
-  no code changes. This monitor provides an early warning before recommendation
-  quality visibly degrades.
-"""
+"""Monitor feature-distribution shifts and recent recommendation outcomes."""
 
 import json
-import os
 import logging
+import os
 from datetime import datetime, timedelta
 from pathlib import Path
 
@@ -28,8 +16,8 @@ DRIFT_LOG_PATH = Path("data/drift_log.json")
 OUTCOMES_PATH = Path("data/recommendation_outcomes.json")
 
 # Thresholds
-FEATURE_DRIFT_THRESHOLD = 2.0  # Z-score of mean shift vs training baseline
-WIN_RATE_FLOOR = 0.45  # below this triggers retraining
+FEATURE_DRIFT_THRESHOLD = 2.0  # z-score of the mean shift against the training baseline
+WIN_RATE_FLOOR = 0.45  # retrain below this win rate
 ROLLING_WINDOW_DAYS = 30
 
 
@@ -40,12 +28,7 @@ class DriftMonitor:
         DRIFT_LOG_PATH.parent.mkdir(parents=True, exist_ok=True)
 
     def check_feature_drift(self, current_df: pd.DataFrame, baseline_stats: dict) -> dict:
-        """
-        Compare current feature distributions against training baseline.
-        Uses a simple Z-score on the mean shift, scaled by baseline std.
-
-        baseline_stats format: {'feature_name': {'mean': float, 'std': float}}
-        """
+        """Measure feature mean shifts relative to each training standard deviation."""
         if not baseline_stats or current_df is None or current_df.empty:
             return {"drifted": False, "features": {}, "max_z": 0.0}
 
@@ -66,7 +49,7 @@ class DriftMonitor:
         max_z = max(z_scores) if z_scores else 0.0
         drifted = max_z > FEATURE_DRIFT_THRESHOLD
 
-        # Log the check
+        # Log the check.
         log_entry = {
             "timestamp": datetime.now().isoformat(),
             "max_z_score": round(max_z, 3),
@@ -81,10 +64,7 @@ class DriftMonitor:
         return {"drifted": drifted, "features": results, "max_z": round(max_z, 3)}
 
     def compute_baseline_stats(self, training_df: pd.DataFrame) -> dict:
-        """
-        Compute mean and std for each numeric feature over the training period.
-        Call this after training and store the result in the model registry.
-        """
+        """Calculate training means and standard deviations for numeric features."""
         if training_df is None or training_df.empty:
             return {}
         numeric = training_df.select_dtypes(include="number")
@@ -98,7 +78,6 @@ class DriftMonitor:
                 }
         return stats
 
-    # Save the recommendation so its outcome can be checked once the horizon elapses
     def log_recommendation(
         self,
         ticker: str,
@@ -108,10 +87,7 @@ class DriftMonitor:
         horizon: int = PREDICTION_HORIZON,
         model_version=None,
     ):
-        """Record a recommendation so its outcome can be evaluated once the model's
-        HORIZON has elapsed. We store the prediction date, the horizon, the model
-        version and (later) the evaluation date, so the outcome is measured over the
-        intended holding period - not over 'whatever history exists now'."""
+        """Record a recommendation, horizon and model version for later outcome evaluation."""
         entry = {
             "ticker": ticker,
             "action": action,
@@ -128,17 +104,11 @@ class DriftMonitor:
         outcomes.append(entry)
         self._save_outcomes(outcomes)
 
-    # Count how many of the last N days of evaluated recommendations were correct
     def rolling_win_rate(self, lookback_days: int = ROLLING_WINDOW_DAYS) -> dict:
-        """
-        Compute win rate over the last N days of evaluated recommendations.
-        Returns dict with win_rate, n_evaluated, and whether retraining is needed.
-        """
+        """Summarise completed outcomes over a rolling window and assess retraining thresholds."""
         outcomes = self._load_outcomes()
         cutoff = (datetime.now() - timedelta(days=lookback_days)).strftime("%Y-%m-%d")
-        # Filter on when the outcome was completed (evaluated_date), not when the
-        # recommendation was made, so the rolling window contains completed outcomes.
-        # Falls back to the rec date for records written before evaluated_date existed.
+        # Select completed outcomes by evaluation date, or recommendation date for older records.
         recent = [
             o for o in outcomes if o.get("evaluated") and (o.get("evaluated_date") or o.get("date", "")) >= cutoff
         ]
@@ -166,12 +136,8 @@ class DriftMonitor:
             "lookback_days": lookback_days,
         }
 
-    # Once the horizon (PREDICTION_HORIZON sessions) has elapsed, look up the actual return and mark correct/wrong
     def evaluate_past_recommendations(self, master_data: dict):
-        """
-        For recommendations made 30+ days ago, look up actual returns and mark correct/wrong.
-        A BUY is 'correct' if the stock rose over the holding period.
-        """
+        """Score matured recommendations against returns over their stated horizon."""
         outcomes = self._load_outcomes()
         changed = False
 
@@ -187,14 +153,12 @@ class DriftMonitor:
             H = int(o.get("horizon", PREDICTION_HORIZON))
             future_rows = df[df.index > rec_date]
             base = df.loc[df.index <= rec_date, "close"]
-            # Only evaluate once the FULL horizon has elapsed (H trading sessions of
-            # future data exist); otherwise the outcome isn't in yet - skip, don't
-            # measure a partial period.
+            # Evaluate only after the full trading horizon is observable.
             if base.empty or len(future_rows) < H:
                 continue
 
             entry_close = float(base.iloc[-1])
-            horizon_close = float(future_rows["close"].iloc[H - 1])  # close H sessions later, NOT the latest
+            horizon_close = float(future_rows["close"].iloc[H - 1])  # close H sessions after the recommendation
             actual_return = horizon_close / entry_close - 1.0
             is_correct = (o["action"] == "BUY" and actual_return > 0) or (o["action"] == "SELL" and actual_return < 0)
 
@@ -209,14 +173,13 @@ class DriftMonitor:
 
         return outcomes
 
-    # Read the outcomes file or return an empty list if it does not exist yet
+    # Read the outcomes file, or an empty list when absent.
     def _load_outcomes(self) -> list:
         if OUTCOMES_PATH.exists():
             try:
                 return json.loads(OUTCOMES_PATH.read_text())
             except Exception as e:
-                # Preserve a corrupt outcomes log instead of silently discarding the
-                # recommendation history that drift monitoring depends on.
+                # Preserve corrupt outcome files instead of replacing history with an empty log.
                 backup = OUTCOMES_PATH.with_suffix(".corrupt")
                 try:
                     OUTCOMES_PATH.replace(backup)
@@ -227,8 +190,7 @@ class DriftMonitor:
         return []
 
     def _save_outcomes(self, outcomes: list):
-        # Atomic write (temp + fsync + rename) so a crash mid-write cannot corrupt
-        # the outcomes log.
+        # Persist outcomes with an atomic file replacement.
         tmp = OUTCOMES_PATH.with_suffix(".json.tmp")
         with open(tmp, "w") as f:
             json.dump(outcomes, f, indent=2)
@@ -236,7 +198,7 @@ class DriftMonitor:
             os.fsync(f.fileno())
         os.replace(tmp, OUTCOMES_PATH)
 
-    # Append to the drift log, keeping only the last 100 entries to prevent unbounded growth
+    # Append to the drift log, keeping the last 100 entries.
     def _append_log(self, entry: dict):
         log = []
         if DRIFT_LOG_PATH.exists():
@@ -245,5 +207,5 @@ class DriftMonitor:
             except Exception:
                 log = []
         log.append(entry)
-        log = log[-100:]  # keep last 100 checks
+        log = log[-100:]
         DRIFT_LOG_PATH.write_text(json.dumps(log, indent=2))

@@ -3,8 +3,7 @@
 import os
 import sys
 
-# Apple Silicon installations can load separate OpenMP runtimes through Torch,
-# sklearn and XGBoost. Serial execution avoids their worker-barrier crash path.
+# Limit native threads to avoid conflicts between numerical runtimes on Apple Silicon.
 if sys.platform == "darwin":
     os.environ["OMP_NUM_THREADS"] = "1"
     os.environ["OMP_THREAD_LIMIT"] = "1"

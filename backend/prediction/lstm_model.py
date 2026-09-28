@@ -1,13 +1,4 @@
-"""Two-layer LSTM for a 21-session return forecast from 30 sessions of features.
-
-The model predicts returns; the XGBoost model predicts price direction.
-Dropout is applied to the final hidden state. Internal recurrent dropout is
-disabled following an observed autograd error on the Apple-silicon CPU setup.
-The final hidden-state slice is made contiguous before the linear output layer.
-
-Related work: Fischer and Krauss (2018), Deep learning with LSTM networks for
-financial market predictions, European Journal of Operational Research 270(2).
-"""
+"""Forecast horizon returns using a two-layer LSTM over rolling feature sequences."""
 
 import json
 import logging
@@ -28,7 +19,7 @@ logger = logging.getLogger(__name__)
 SEQ_LEN = 30
 MODELS_DIR = Path("models/lstm")
 
-# column names must match feature_engineer.py output exactly
+# Column names match feature_engineer.py output.
 TRAIN_FEATURES = [
     "sma20",
     "sma50",
@@ -57,8 +48,7 @@ TRAIN_FEATURES = [
 ]
 
 
-# Default architecture: two recurrent layers, 128 hidden units and 0.2 output
-# dropout. Validation loss determines the selected epoch through early stopping.
+# Use two recurrent layers, 128 hidden units, output dropout and validation early stopping.
 def _build_net(input_size, hidden=128, layers=2, dropout=0.2):
     import torch.nn as nn
 
@@ -71,17 +61,16 @@ def _build_net(input_size, hidden=128, layers=2, dropout=0.2):
                 input_size=input_size,
                 hidden_size=hidden,
                 num_layers=layers,
-                dropout=0.0,  # manual dropout instead of nn.LSTM's (see docstring)
+                dropout=0.0,  # dropout applied to the final hidden state
                 batch_first=True,
-            )  # dropout is applied to the last hidden state below
+            )
             self.dropout = nn.Dropout(dropout)
             self.fc = nn.Linear(hidden, 1)
 
         def forward(self, x):
             """Apply the recurrent layers and project the final timestep to a return."""
             out, _ = self.lstm(x)
-            # out[:, -1, :] is a non-contiguous view; .contiguous() gives the linear
-            # head a contiguous layout (a no-op if the slice is already contiguous).
+            # Make the final hidden-state slice contiguous before the output layer.
             last = out[:, -1, :].contiguous()
             return self.fc(self.dropout(last)).squeeze(-1)
 
@@ -134,7 +123,9 @@ class LSTMForecaster:
         self.model = None
         self.scaler = MinMaxScaler(feature_range=(-1, 1))
 
-    def train(self, df: pd.DataFrame, epochs=60, lr=0.001, batch_size=32, patience=10, progress_cb=None, persist: bool = True) -> dict:
+    def train(
+        self, df: pd.DataFrame, epochs=60, lr=0.001, batch_size=32, patience=10, progress_cb=None, persist: bool = True
+    ) -> dict:
         """Fit chronologically split sequences and persist the selected return model."""
         import torch
         import torch.nn as nn
@@ -150,14 +141,12 @@ class LSTMForecaster:
         if X_seq is None or len(X_seq) < 50:
             return {"error": "Not enough sequence data"}
 
-        # Temporal train/val split; scaler already fit on TRAIN rows only inside
-        # _build_sequences (no validation leakage).
+        # Split sequences chronologically using a scaler fitted only on training rows.
         if val_mask is not None and val_mask.any() and (~val_mask).any():
             X_tr, X_val = X_seq[~val_mask], X_seq[val_mask]
             y_tr, y_val = y_seq[~val_mask], y_seq[val_mask]
         else:
-            # No row-position fallback: a positional split on ticker-concatenated
-            # sequences would not be one chronological boundary and could leak.
+            # Reject missing date boundaries rather than splitting concatenated ticker rows.
             raise RuntimeError(
                 "LSTM training requires a valid chronological validation split "
                 "(a row-position fallback would leak across tickers)."
@@ -216,8 +205,7 @@ class LSTMForecaster:
                 }
             )
 
-            # Log EVERY epoch with per-epoch time and an ETA, so a slow CPU run
-            # reads as steady progress rather than a frozen process.
+            # Log epoch duration and estimated remaining training time.
             _dt = time.time() - _t_epoch
             _eta = _dt * (epochs - epoch)
             logger.info(
@@ -228,7 +216,7 @@ class LSTMForecaster:
                 try:
                     progress_cb(epoch, epochs, val_loss, dir_acc)
                 except Exception:
-                    pass  # progress reporting must never break training
+                    pass  # ignore progress callback errors
 
             if val_loss < best_val:
                 best_val = val_loss
@@ -256,12 +244,21 @@ class LSTMForecaster:
             "history": history,
             "trained_at": datetime.now().isoformat(),
             "horizon": self.horizon,
-            "config": {"epochs_max": epochs, "batch_size": batch_size, "learning_rate": lr, "patience": patience, "seq_len": self.seq_len, "hidden": self.hidden, "layers": self.layers, "dropout": self.dropout},
+            "config": {
+                "epochs_max": epochs,
+                "batch_size": batch_size,
+                "learning_rate": lr,
+                "patience": patience,
+                "seq_len": self.seq_len,
+                "hidden": self.hidden,
+                "layers": self.layers,
+                "dropout": self.dropout,
+            },
             "n_sequences": int(len(X_seq)),
             "date_range": [str(df.index.min())[:10], str(df.index.max())[:10]] if _dt_index else None,
         }
 
-        # persist training history so the validation dashboard can plot it
+        # Save training history for the validation dashboard.
         if persist:
             with open(self.models_dir / "training_history.json", "w") as f:
                 json.dump(training_results, f, indent=2)
@@ -279,13 +276,12 @@ class LSTMForecaster:
 
         import torch
 
-        # A required feature that is absent is a data-contract violation, not
-        # something to fabricate: return unavailable rather than invent a zero column.
+        # Return unavailable when a required feature is missing.
         missing = [c for c in TRAIN_FEATURES if c not in df.columns]
         if missing:
             logger.warning(f"LSTM predict: required features absent {missing}; prediction unavailable")
             return None
-        X_df = df[TRAIN_FEATURES].ffill()  # carry across warm-up gaps only; never zero-fill
+        X_df = df[TRAIN_FEATURES].ffill()  # forward-fill warm-up gaps only
 
         if len(X_df) < self.seq_len:
             return None
@@ -335,7 +331,7 @@ class LSTMForecaster:
             missing = [c for c in TRAIN_FEATURES if c not in sub.columns]
             if missing:
                 raise ValueError(f"LSTM predict_panel: {ticker} missing required features {missing}")
-            features = sub[TRAIN_FEATURES].ffill()  # never zero-fill; non-finite windows raise below
+            features = sub[TRAIN_FEATURES].ffill()  # non-finite windows raise below
             values = self.scaler.transform(features.to_numpy()).astype(np.float32)
             ends = sub.index.get_indexer(requested.index)
             eligible = ends >= self.seq_len - 1
@@ -358,6 +354,7 @@ class LSTMForecaster:
     def save(self):
         """Persist network weights, scaler and the selected feature schema."""
         import torch
+
         from backend.infra.model_registry import artifact_fingerprint as _artifact_fingerprint
 
         self.models_dir.mkdir(parents=True, exist_ok=True)
@@ -417,7 +414,7 @@ class LSTMForecaster:
 
     def _build_sequences(self, df: pd.DataFrame, fit_scaler: bool = True, val_frac: float = 0.2, lazy: bool = False):
         df = df.copy()
-        # Required features must be present when building training sequences.
+        # Check required features before building training sequences.
         missing = [c for c in TRAIN_FEATURES if c not in df.columns]
         if missing:
             raise RuntimeError(f"LSTM training is missing required features: {missing}")
@@ -426,19 +423,17 @@ class LSTMForecaster:
         scaled_arrays, anchors = [], []
         tickers = df["ticker"].unique() if "ticker" in df.columns else ["all"]
 
-        # Pass 1: assemble each ticker's labelled feature/target/date arrays. The
-        # scaler is fit on training rows only, before the validation boundary.
+        # Assemble labelled ticker arrays and fit the scaler before the validation boundary.
         prepared = []
         for t in tickers:
             sub = df[df["ticker"] == t] if "ticker" in df.columns else df
             has_target = "target_return" in sub.columns
             need = TRAIN_FEATURES + (["target_return"] if has_target else [])
             sub = sub[need + []].copy()
-            # Fill features only; rows with a missing forward-return label are dropped, not filled.
+            # Fill features only; rows with a missing label are dropped.
             sub[TRAIN_FEATURES] = sub[TRAIN_FEATURES].replace([float("inf"), float("-inf")], np.nan)
             sub[TRAIN_FEATURES] = sub[TRAIN_FEATURES].ffill()
-            # Drop warm-up rows whose indicators are still undefined rather than
-            # filling them with zero, which looks like a real value after scaling.
+            # Exclude rows with incomplete indicators before scaling.
             sub = sub.dropna(subset=TRAIN_FEATURES)
             if has_target:
                 sub = sub[sub["target_return"].notna()]
@@ -452,16 +447,11 @@ class LSTMForecaster:
         if not prepared:
             return None, None, None
 
-        # Split all tickers on the same chronological validation boundary (or a
-        # per-ticker row fraction when the index is not datetime). A purge of
-        # PREDICTION_HORIZON sessions before each ticker's first validation anchor
-        # drops training anchors whose forward-return label would reach into the
-        # validation block.
+        # Purge training anchors whose forward labels reach the validation window.
         is_dt = isinstance(df.index, pd.DatetimeIndex)
         cutoff = None
         if is_dt:
-            # Chronological cutoff on the union of unique trading dates via the
-            # shared temporal-split utility (last val_frac of dates -> validation).
+            # Use the latest fraction of unique trading dates for validation.
             all_dates = np.concatenate([d for _, _, d in prepared])
             cutoff = date_cutoff(all_dates, val_frac)
         purge = self.horizon
@@ -476,12 +466,9 @@ class LSTMForecaster:
             for feats, _, dates in prepared:
                 fv = _first_val_pos(feats, dates)
                 if fv > 0:
-                    self.scaler.partial_fit(feats[:fv])  # TRAIN rows only
+                    self.scaler.partial_fit(feats[:fv])  # training rows only
 
-        # Pass 2: transform with the train-fitted scaler and build sequences. The
-        # window ENDS at row i (inclusive) paired with the target that BEGINS at row
-        # i (forward return anchored at the window's final observation). This matches
-        # inference, where the forecast is anchored to the final observed session.
+        # End each feature window at the anchor of its forward-return target.
         for feats, targets, dates in prepared:
             feats_sc = self.scaler.transform(feats).astype(np.float32)
             scaled_arrays.append(feats_sc)
@@ -489,7 +476,7 @@ class LSTMForecaster:
             for i in range(self.seq_len - 1, len(feats_sc)):
                 is_val = i >= first_val
                 if (not is_val) and (first_val - i) <= purge:
-                    continue  # embargo: label window overlaps the val block
+                    continue  # label window overlaps the validation block
                 anchors.append((len(scaled_arrays) - 1, i))
                 if not lazy:
                     X_all.append(feats_sc[i - self.seq_len + 1 : i + 1])
@@ -502,26 +489,14 @@ class LSTMForecaster:
         return windows, np.array(y_all, dtype=np.float32), np.array(val_all, dtype=bool)
 
     def update(self, df: pd.DataFrame, epochs: int = 10) -> dict:
-        """Fine-tune the existing LSTM on recent data, WITH a validation gate.
-
-        A held-out (latest-dates) validation slice scores the model before and
-        after fine-tuning; if the update does not at least match the prior
-        validation loss it is ROLLED BACK and the saved model is left unchanged,
-        so an update is accepted only when this validation loss does not worsen. Uses a lower
-        learning rate (1e-4) to limit catastrophic forgetting.
-
-        Note on "incremental": this fine-tunes on the sequences built from the
-        supplied master history (a re-fit at low LR), not on strictly new-only
-        rows - the naming elsewhere should say "low-LR re-fit", not "incremental".
-        Requires the model to already exist - call train() for the first run.
-        """
+        """Fine-tune existing weights at a lower learning rate and roll back worse validation loss."""
         import copy
 
         import torch
         import torch.nn as nn
         from torch.utils.data import DataLoader
 
-        torch.set_num_threads(1)  # macOS thread-oversubscription fix (see train())
+        torch.set_num_threads(1)  # limit CPU threads
 
         if not self._loaded():
             raise RuntimeError("LSTM.update() called before any model has been trained. Run train() first.")
@@ -536,8 +511,7 @@ class LSTMForecaster:
             X_tr, y_tr = X_seq[~val_mask], y_seq[~val_mask]
             X_val, y_val = X_seq[val_mask], y_seq[val_mask]
         else:
-            # The docstring promises a validation/rollback gate; without a valid
-            # chronological split we skip rather than fine-tune ungated.
+            # Skip fine-tuning when a chronological validation split is unavailable.
             logger.warning("LSTM update: no valid validation split; skipping update")
             return {"mode": "skipped", "reason": "no_validation_split"}
 
@@ -582,9 +556,9 @@ class LSTMForecaster:
         self.model.eval()
         after = _val_loss()
 
-        # Deployment gate: keep the update only if validation loss did not worsen.
+        # Keep the update only if validation loss did not worsen.
         if before is not None and after is not None and after > before * 1.01:
-            self.model.load_state_dict(snapshot)  # ROLLBACK to pre-update weights
+            self.model.load_state_dict(snapshot)  # restore pre-update weights
             self.model.eval()
             logger.warning(
                 f"LSTM update rolled back: val loss worsened {before:.6f} -> {after:.6f}; kept the previous model"

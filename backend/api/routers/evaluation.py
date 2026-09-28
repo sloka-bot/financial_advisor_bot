@@ -18,15 +18,13 @@ router = APIRouter()
 
 @router.get("/api/model-registry")
 def get_model_registry():
-    """Return the full version history for both models, including
-    walk-forward AUC and deployment decisions for each training run."""
+    """Return model versions, validation scores and deployment decisions."""
     return ModelRegistry().list_all()
 
 
 @router.get("/api/drift-status")
 def get_drift_status():
-    """Return the 30-day recommendation win rate and whether the
-    system recommends triggering a retrain."""
+    """Return recent recommendation performance and retraining status."""
     tickers = {r["ticker"] for r in runtime.drift_monitor._load_outcomes()}
     runtime.drift_monitor.evaluate_past_recommendations({t: runtime.fusion.load_master(t) for t in tickers})
     win_rate = runtime.drift_monitor.rolling_win_rate()
@@ -45,8 +43,7 @@ def get_drift_status():
 
 @router.get("/api/recommendation-outcomes")
 def get_recommendation_outcomes():
-    """Return all logged recommendations whose horizon (21 trading sessions) has
-    elapsed, with their evaluated outcomes."""
+    """Return outcomes for recommendations whose trading horizon has elapsed."""
     outcomes = runtime.drift_monitor._load_outcomes()
     evaluated = [o for o in outcomes if o.get("evaluated")]
     pending = [o for o in outcomes if not o.get("evaluated")]
@@ -63,7 +60,7 @@ def get_recommendation_outcomes():
 
 @router.get("/api/experiment-results")
 def experiment_results():
-    """Serve the saved leakage-free experiment matrix (scripts/run_experiments.py)."""
+    """Serve the saved experiment matrix from scripts/run_experiments.py."""
     path = Path("data/experiments/experiment_results.json")
     if not path.exists():
         raise HTTPException(404, "No experiment results yet - run scripts/run_experiments.py")
@@ -75,7 +72,7 @@ def experiment_results():
 
 @router.get("/api/portfolio-comparison")
 def portfolio_comparison_results():
-    """Serve the saved portfolio comparison (scripts/train_ppo_oos.py)."""
+    """Serve the saved portfolio comparison from scripts/train_ppo_oos.py."""
     path = Path("data/experiments/portfolio_results.json")
     if not path.exists():
         raise HTTPException(404, "No portfolio comparison yet - run scripts/train_ppo_oos.py")

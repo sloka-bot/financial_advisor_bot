@@ -1,17 +1,4 @@
-"""
-news_collector.py
-
-Collects recent news headlines for each ticker from Yahoo Finance and
-saves them as per-ticker JSON files. The sentiment analyser reads these
-files in the next pipeline step.
-
-Cached files carry a ``collected_at`` timestamp so a stale cache is
-refreshed automatically instead of being served forever (see
-``max_age_hours``). A fetch that raises is reported as ``fetch_failed`` and
-kept distinct from ``no_articles`` (the fetch succeeded but the source
-returned nothing): downstream, "we could not reach the source" must not be
-treated the same as "there genuinely was no news".
-"""
+"""Cache ticker news and distinguish collection failures from empty article lists."""
 
 import json
 import logging
@@ -23,9 +10,7 @@ import yfinance as yf
 
 logger = logging.getLogger(__name__)
 
-# A cached news file older than this is refetched on the next request rather
-# than served indefinitely. Kept modest so a daily pipeline run picks up news
-# published since the previous collection.
+# Refresh news caches older than the configured interval.
 DEFAULT_MAX_AGE_HOURS = 12
 
 
@@ -33,32 +18,19 @@ class NewsCollector:
     """Fetch and cache current ticker news for live sentiment processing."""
 
     def __init__(self, news_dir="data/news/live"):
-        # Create the news data directory on startup
+        # Create the news data directory.
         self.news_dir = Path(news_dir)
         self.news_dir.mkdir(parents=True, exist_ok=True)
 
     def get_ticker_news(self, ticker, force=False, max_age_hours=DEFAULT_MAX_AGE_HOURS):
-        """Return the ticker's article list (possibly empty).
-
-        Backward-compatible wrapper around ``fetch_ticker_news`` for callers
-        that only need the articles and do not care why the list is empty.
-        """
+        """Return the ticker's articles without collection-status metadata."""
         return self.fetch_ticker_news(ticker, force=force, max_age_hours=max_age_hours)[1]
 
     def fetch_ticker_news(self, ticker, force=False, max_age_hours=DEFAULT_MAX_AGE_HOURS):
-        """Fetch (or serve from cache) one ticker's news.
-
-        Returns ``(status, articles)`` where status is one of:
-          "cache_fresh"   - served an unexpired cache
-          "fetched"       - fetched fresh articles from Yahoo
-          "no_articles"   - fetch succeeded but the source returned nothing
-          "fetch_failed"  - the fetch raised (network/API error); a prior
-                            cached copy, if any, is returned alongside so a
-                            transient outage does not blank out sentiment.
-        """
+        """Return collection status and articles, retaining cached articles on fetch failure."""
         path = self._path(ticker)
 
-        # Serve from cache while it is still fresh (unless a refresh is forced).
+        # Serve from cache while fresh unless a refresh is forced.
         if path.exists() and not force:
             cached = self._read_cache(path)
             if cached is not None and not self._is_stale(cached, max_age_hours):
@@ -92,7 +64,7 @@ class NewsCollector:
             if raw and not articles:
                 raise ValueError("News provider returned no usable titles/timestamps")
 
-            # Save to disk with a fresh timestamp so re-runs reuse it until stale.
+            # Save with a fresh timestamp.
             path.write_text(
                 json.dumps(
                     {
@@ -109,15 +81,13 @@ class NewsCollector:
             return ("fetched" if articles else "no_articles"), articles
 
         except Exception as e:
-            # A failed fetch is NOT the same as "no news". Report it distinctly
-            # and, if a previous cache exists, still return those articles.
+            # Report fetch failures separately and retain previously cached articles.
             logger.warning(f"  {ticker}: news fetch failed - {e}")
             cached = self._read_cache(path) if path.exists() else None
             return "fetch_failed", (cached.get("articles", []) if cached else [])
 
     def get_universe_news(self, tickers, delay=0.5, force=False, max_age_hours=DEFAULT_MAX_AGE_HOURS, progress_cb=None):
-        """Fetch news for every ticker, keeping fetch failures distinct from
-        genuinely empty (no-article) tickers."""
+        """Fetch universe news while distinguishing failed requests from empty responses."""
         results = {"success": [], "empty": [], "failed": []}
         n = len(tickers)
         for i, ticker in enumerate(tickers, 1):
@@ -147,12 +117,7 @@ class NewsCollector:
 
     @staticmethod
     def _is_stale(cached, max_age_hours):
-        """True if the cached payload is older than ``max_age_hours``.
-
-        An undated or unparseable cache is treated as stale so it gets
-        refreshed. ``max_age_hours=None`` disables the freshness check (the old
-        serve-forever behaviour), for callers that want it.
-        """
+        """Check cache age; missing dates are stale unless freshness checks are disabled."""
         if max_age_hours is None:
             return False
         ts = cached.get("collected_at")

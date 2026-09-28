@@ -1,22 +1,4 @@
-"""
-user_store.py
-
-Flat-file user store backed by a single JSON document.
-Stores risk profile, portfolio holdings, pending recommendations,
-and recommendation history for each user.
-
-Robustness:
-  * every read-modify-write runs under one process-level reentrant lock, so two
-    concurrent requests cannot lose each other's updates;
-  * writes are atomic (temp file + os.replace) so an interrupted write never
-    leaves a half-written store;
-  * a file that exists but fails to parse is treated as corruption - backed up
-    and refused - never silently read as an empty store that a later write would
-    overwrite;
-  * recommendation IDs are drawn from a per-user monotonic counter, so a
-    regenerated batch never reuses an old ID (a stale approval can no longer land
-    on a different recommendation).
-"""
+"""Persist user portfolios and recommendations with atomic, process-locked updates."""
 
 import json
 import logging
@@ -29,7 +11,7 @@ from pathlib import Path
 
 logger = logging.getLogger(__name__)
 
-# All user data lives in one flat JSON file next to the app data directory
+# User data is stored in one JSON file in the data directory.
 STORE = Path("data/users.json")
 
 # One reentrant lock serialises all load -> modify -> save cycles in this process.
@@ -37,8 +19,7 @@ _LOCK = threading.RLock()
 
 
 def _locked(fn):
-    """Run the whole method body under the store lock (reentrant, so nested store
-    calls such as update_profile -> create_profile are safe)."""
+    """Hold the reentrant store lock for the entire read-modify-write operation."""
 
     @wraps(fn)
     def wrap(self, *args, **kwargs):
@@ -50,17 +31,10 @@ def _locked(fn):
 
 
 class UserStore:
-    # Read and return the users section of the JSON store, or an empty dict if missing
     """Persist profiles, holdings and recommendation decisions in a local JSON store."""
 
     def _load(self) -> dict:
-        """Read the users document from disk and return the inner users dict.
-
-        A MISSING file is a fresh install -> {}. But a file that EXISTS and fails to
-        parse is corruption; returning {} there would let the next _save silently
-        overwrite recoverable data with an empty store. So we back the bad file up
-        and raise instead of pretending it was empty.
-        """
+        """Read saved users; preserve and reject corrupt files rather than treating them as empty."""
         if not STORE.exists():
             return {}
         text = STORE.read_text()
@@ -72,10 +46,10 @@ class UserStore:
                 shutil.copy2(STORE, backup)
             except Exception:
                 pass
-            logger.error(f"user store corrupt; backed up to {backup.name} and refusing to overwrite: {e}")
+            logger.error(f"user store corrupt; backed up to {backup.name}; file left unchanged: {e}")
             raise RuntimeError(f"user store corrupt (backed up to {backup.name})") from e
 
-    # Serialise the full users dict back to disk ATOMICALLY (temp file + replace)
+    # Write the users dict atomically.
     def _save(self, users: dict):
         STORE.parent.mkdir(parents=True, exist_ok=True)
         tmp = STORE.with_suffix(".tmp")
@@ -96,6 +70,8 @@ class UserStore:
     def create_profile(self, user_id: str, profile: dict) -> dict:
         """Write a new user record from the onboarding questionnaire answers."""
         users = self._load()
+        if user_id in users:
+            return users[user_id]
         now = datetime.now().isoformat()
         users[user_id] = {
             "user_id": user_id,
@@ -125,14 +101,7 @@ class UserStore:
 
     @_locked
     def update_profile(self, user_id: str, updates: dict) -> dict:
-        """Merge the onboarding answers into an existing profile.
-
-        `budget` is the RECOMMENDATION BUDGET: the target capital used to build new
-        recommendations. It is not the current portfolio value, which is tracked
-        separately in `portfolio.holdings` + `portfolio.cash` and remains the source
-        of truth for existing positions. Changing the budget here therefore does not
-        move money in the book; it only changes the capital used for future advice.
-        """
+        """Update profile fields without changing saved holdings or cash balances."""
         users = self._load()
         if user_id not in users:
             return self.create_profile(user_id, updates)
@@ -142,7 +111,10 @@ class UserStore:
             logger.warning(
                 "User %s budget changed %s -> %s while holding %d position(s); budget is the "
                 "recommendation target, portfolio holdings/cash remain the source of truth for current value.",
-                user_id, users[user_id]["budget"], new_budget, len(holdings),
+                user_id,
+                users[user_id]["budget"],
+                new_budget,
+                len(holdings),
             )
         users[user_id].update(
             {
@@ -176,10 +148,34 @@ class UserStore:
         self._save(users)
 
     @_locked
+    def execute_portfolio_action(self, user_id, executor, *, action):
+        """Apply a validated local transaction and its audit entry under one lock."""
+        users = self._load()
+        current = users.get(user_id)
+        if current is None:
+            return None
+        result = executor(current)
+        if result.get("error") or result.get("respects_profile") is False:
+            return result
+        now = datetime.now().isoformat()
+        current["portfolio"].update(holdings=result["holdings"], cash=result["cash"], updated_at=now)
+        current["updated_at"] = now
+        current.setdefault("transaction_history", []).append(
+            {
+                "action": action,
+                "ticker": result.get("ticker"),
+                "fees": result.get("fees", 0),
+                "cash_after": result["cash"],
+                "created_at": now,
+            }
+        )
+        current["pending_recommendations"] = []
+        self._save(users)
+        return result
+
+    @_locked
     def add_recommendations(self, user_id: str, recs: list):
-        """Replace the pending list, assigning each rec a unique id from a per-user
-        monotonic counter, so a regenerated batch never reuses an id and a stale
-        approval cannot act on an unrelated recommendation."""
+        """Replace pending recommendations with unique, monotonically increasing identifiers."""
         users = self._load()
         if user_id not in users:
             return
@@ -195,16 +191,13 @@ class UserStore:
 
     @_locked
     def get_pending_recommendation(self, user_id: str, rec_id: int) -> dict | None:
-        """Return a pending recommendation WITHOUT changing its status. Used so the
-        caller can execute the trade first and only mark it approved on success."""
+        """Read a pending recommendation without changing its status."""
         pending = self._load().get(user_id, {}).get("pending_recommendations", [])
         return next((r for r in pending if r["id"] == rec_id), None)
 
     @_locked
     def approve_recommendation(self, user_id: str, rec_id: int) -> dict | None:
-        """Move a recommendation from the pending list to the history list. Callers
-        should execute the trade FIRST and only call this on success, so status and
-        balances stay consistent."""
+        """Record approval after successful execution of the recommendation."""
         users = self._load()
         pending = users.get(user_id, {}).get("pending_recommendations", [])
         target = next((r for r in pending if r["id"] == rec_id), None)
@@ -245,9 +238,7 @@ class UserStore:
         result = executor(rec, current)
         if result.get("error"):
             return result
-        # Hard profile constraints: never persist a recommendation whose resulting
-        # book breaches the risk-profile limits (position cap or cash floor). Surface
-        # it as an error rather than approving an out-of-policy portfolio.
+        # Reject resulting portfolios that breach position or cash limits before saving.
         if result.get("respects_profile") is False:
             return {
                 "error": "profile_violation",

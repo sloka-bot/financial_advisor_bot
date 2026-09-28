@@ -1,0 +1,37 @@
+{
+  "auc": 0.5092,
+  "cv_auc_mean": 0.5092,
+  "cv_auc_std": 0.0105,
+  "cv_fold_aucs": [
+    0.5207,
+    0.5185,
+    0.4982,
+    0.4993
+  ],
+  "cv_ran": true,
+  "cv_direction_acc": 0.5155,
+  "best_iteration": 39,
+  "early_stopping": true,
+  "n_features": 44,
+  "n_samples": 1319716,
+  "trained_at": "2026-09-27T10:06:45.814591",
+  "horizon": 1,
+  "date_range": [
+    "2010-10-18",
+    "2023-12-29"
+  ],
+  "hyperparameters": {
+    "n_estimators": 600,
+    "max_depth": 6,
+    "learning_rate": 0.05,
+    "subsample": 0.8,
+    "colsample_bytree": 0.8,
+    "min_child_weight": 3,
+    "gamma": 0.1,
+    "reg_alpha": 0.1,
+    "reg_lambda": 1.0,
+    "early_stopping_rounds": 30
+  },
+  "deployed": true,
+  "registered": false
+}

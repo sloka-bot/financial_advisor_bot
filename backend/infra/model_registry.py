@@ -1,15 +1,9 @@
-"""
-model_registry.py
-
-Tracks every trained version of each model and controls which version is
-deployed for inference. Only promotes a new model if it is not meaningfully
-worse than the current best on walk-forward AUC.
-"""
+"""Record model versions and select deployment candidates using validation scores."""
 
 import hashlib
 import json
-import os
 import logging
+import os
 import platform
 from datetime import datetime
 from importlib import metadata as _md
@@ -19,10 +13,8 @@ logger = logging.getLogger(__name__)
 REGISTRY_PATH = Path("models/registry.json")
 
 
-
-def _pkg_versions() -> dict:
-    """Record the library versions used to train an artifact, without importing
-    the heavy libraries themselves."""
+def _package_versions() -> dict:
+    """Read installed library versions without importing numerical runtimes."""
     versions = {"python": platform.python_version()}
     for name in ("scikit-learn", "xgboost", "torch", "pandas", "numpy", "scipy"):
         try:
@@ -41,17 +33,13 @@ def feature_schema_hash(feature_names) -> str:
 
 
 def artifact_fingerprint(feature_names, data_version=None) -> dict:
-    """Compatibility fingerprint written next to a saved model artifact: the
-    library versions it was trained under, its ordered-feature schema hash, and
-    an optional training-data version. Verified on load so an artifact pickled
-    under an incompatible environment or a different feature schema is rejected
-    rather than used silently."""
+    """Record model library versions, ordered feature schema and optional data version."""
     try:
         from backend.config.settings import FEATURE_PIPELINE_VERSION
     except Exception:
         FEATURE_PIPELINE_VERSION = None
     return {
-        "package_versions": _pkg_versions(),
+        "package_versions": _package_versions(),
         "feature_schema_hash": feature_schema_hash(feature_names),
         "n_features": len(list(feature_names)),
         "feature_pipeline_version": FEATURE_PIPELINE_VERSION,
@@ -61,13 +49,10 @@ def artifact_fingerprint(feature_names, data_version=None) -> dict:
 
 
 def check_artifact_compatibility(fingerprint, feature_names):
-    """Return (ok, issues). An artifact is rejected (ok=False) on a MAJOR-version
-    change of a critical numerical/ML library or a feature-schema hash mismatch,
-    because pickled estimators and tensors are not portable across those. A minor
-    or patch version change is reported as a non-fatal warning."""
+    """Reject major-version or feature-schema mismatches and report minor-version changes."""
     issues = []
     fatal = False
-    cur = _pkg_versions()
+    cur = _package_versions()
     saved = (fingerprint or {}).get("package_versions", {}) or {}
     for pkg in CRITICAL_PKGS:
         s, c = saved.get(pkg), cur.get(pkg)
@@ -96,19 +81,25 @@ class ModelRegistry:
     """Persist model versions, validation scores and deployment decisions."""
 
     def __init__(self):
-        # Ensure the models directory exists before trying to write the registry
+        # Create the models directory.
         REGISTRY_PATH.parent.mkdir(parents=True, exist_ok=True)
         self._data = self._load()
 
-    # Write a new training run to the registry and decide its status
-    def register(self, model_type: str, metrics: dict, features: list, train_end_year: int | None = None, data_version: str | None = None, force_best: bool = False) -> int:
+    def register(
+        self,
+        model_type: str,
+        metrics: dict,
+        features: list,
+        train_end_year: int | None = None,
+        data_version: str | None = None,
+        force_best: bool = False,
+    ) -> int:
         """Add a new training run to the registry and return its version number."""
         self._data = self._load()
         records = self._data.setdefault(model_type, [])
         version = (records[-1]["version"] + 1) if records else 1
         existing = self._best(model_type)
-        # force_best: a canonical regeneration run (retrain_models.py) deploys the
-        # freshly trained full-corpus model as best regardless of a noisy AUC gate.
+        # Explicit regeneration can override the validation-based deployment decision.
         status = "best" if force_best else self._decide_status(existing, metrics)
 
         entry = {
@@ -121,12 +112,12 @@ class ModelRegistry:
             "feature_names": list(features),
             "feature_schema_hash": feature_schema_hash(features),
             "feature_preview": list(features)[:10],
-            "package_versions": _pkg_versions(),
+            "package_versions": _package_versions(),
             "data_version": data_version,
         }
         records.append(entry)
 
-        # Archive the previous best so the history is preserved
+        # Archive the previous best version.
         if status == "best":
             for previous in records[:-1]:
                 if previous.get("status") in ("best", "deployed"):
@@ -138,24 +129,19 @@ class ModelRegistry:
         logger.info(f"Registry: {model_type} v{version} registered as {status}  AUC={_auc_str}")
         return version
 
-    # Return True unless the new model is meaningfully worse than the current best
     def should_deploy(self, model_type: str, new_metrics: dict) -> bool:
-        """Deploy the new model for inference unless it is meaningfully worse than
-        the BEST-EVER model (not merely the last-deployed one). Comparing to the
-        best-ever AUC stops the baseline ratcheting downward, where each retrain
-        within 0.005 of the last could quietly lower the bar for the next."""
+        """Compare a candidate's validation score with the best recorded score and tolerance."""
         self._data = self._load()
         best = self._best(model_type)
         if not best:
             return True
-        # A candidate with no validated walk-forward estimate must not replace a
-        # model that has one.
+        # Preserve validated models when a candidate lacks a validation score.
         if new_metrics.get("cv_ran") is False or new_metrics.get("auc") is None:
             logger.info(f"Registry: {model_type} candidate has no walk-forward AUC - not deploying over existing best")
             return False
         best_auc = best.get("auc")
         if best_auc is None:
-            return True  # any validated model beats an unvalidated incumbent
+            return True  # a validated model beats an unvalidated incumbent
         new_auc = new_metrics.get("auc", 0.5)
         deploy = new_auc >= best_auc - 0.005
         logger.info(f"Registry: {model_type} deploy={deploy}  new_auc={new_auc}  best_ever_auc={best_auc}")
@@ -174,22 +160,18 @@ class ModelRegistry:
         return dict(self._data)
 
     def _best(self, model_type: str) -> dict | None:
-        # The best-ever record BY AUC, not the most recently deployed one, so the
-        # promotion baseline can never drift downward across retrains.
+        # Use the highest recorded AUC as the deployment reference.
         records = self._data.get(model_type, [])
         if not records:
             return None
-        # None AUCs (unvalidated runs) rank lowest, so a real model is always preferred
+        # Unvalidated runs rank lowest.
         return max(records, key=lambda r: ((r.get("auc") if r.get("auc") is not None else -1.0), r.get("version", 0)))
 
     def _decide_status(self, existing: dict | None, new_metrics: dict) -> str:
-        # 'best' only when at least as good as the best-ever (so the recorded best
-        # is always the true maximum); 'deployed' when within tolerance and serving
-        # inference; 'rejected' otherwise.
+        # Distinguish new best scores, deployments within tolerance and rejected candidates.
         if not existing:
             return "best"
-        # None AUC = unvalidated run; rank it lowest so a validated model always wins
-        # and comparisons never touch None.
+        # Rank missing validation scores below measured scores.
         _raw_new = new_metrics.get("auc")
         _raw_best = existing.get("auc")
         new_auc = _raw_new if _raw_new is not None else -1.0
@@ -198,14 +180,13 @@ class ModelRegistry:
             return "best"
         return "deployed" if new_auc >= best_auc - 0.005 else "rejected"
 
-    # Read the registry JSON or return an empty dict if not yet created
+    # Read the registry JSON, or an empty dict when absent.
     def _load(self) -> dict:
         if REGISTRY_PATH.exists():
             try:
                 return json.loads(REGISTRY_PATH.read_text())
             except Exception as e:
-                # Preserve a corrupt registry instead of silently discarding it, so a
-                # parse failure never wipes the deployment history.
+                # Preserve a corrupt registry rather than discarding deployment history.
                 backup = REGISTRY_PATH.with_suffix(".corrupt")
                 try:
                     REGISTRY_PATH.replace(backup)
@@ -215,8 +196,7 @@ class ModelRegistry:
                 return {}
         return {}
 
-    # Write the registry back to disk after every change, atomically (temp file +
-    # fsync + rename) so a crash mid-write cannot corrupt the registry.
+    # Persist the registry through an atomic file replacement.
     def _save(self):
         tmp = REGISTRY_PATH.with_suffix(".json.tmp")
         with open(tmp, "w") as f:

@@ -1,19 +1,4 @@
-"""
-experiments.py
-
-Leakage-controlled, multi-horizon experiment engine.
-
-Splits are by calendar date across all tickers; every fold fits its scaler on
-training rows only; the H training days that overlap a validation block's label
-window are embargoed; a final block is held out and scored once.
-
-Shared building blocks (panel construction, date folds, scaling, metrics, the
-non-overlapping trading backtest, block bootstrap) live here and are reused by
-every experiment A-H.
-
-Heavy libraries (xgboost, torch, hmmlearn) are imported lazily so importing this
-module stays cheap.
-"""
+"""Build chronological forecasting experiments, trading comparisons and uncertainty estimates."""
 
 import logging
 import time
@@ -23,15 +8,13 @@ import numpy as np
 import pandas as pd
 from scipy.stats import spearmanr
 
-from backend.config.settings import RF_ANNUAL, TRADING_DAYS, TX_COST, embargo_for
+from backend.config.settings import TRADING_DAYS, TX_COST, embargo_for
+from backend.evaluation.metrics import annualized_sharpe, max_drawdown
 from backend.portfolio.transaction_costs import transaction_cost
 
-from backend.evaluation.metrics import annualized_sharpe, max_drawdown
 logger = logging.getLogger(__name__)
 
-# --------------------------------------------------------------------------- #
-# Feature groups: the technical feature set and the leave-one-group-out ablation.
-# --------------------------------------------------------------------------- #
+# Technical feature groups and ablation definitions.
 FEATURE_GROUPS = {
     "trend": [
         "sma20",
@@ -76,7 +59,7 @@ SENTIMENT_FEATURES = [
     "sent_no_news",
 ]
 
-# columns that are labels/meta/executable and must never be features
+# Label, metadata and execution columns excluded from features.
 NON_FEATURES = {
     "open",
     "high",
@@ -128,17 +111,9 @@ def all_features(available, include_sentiment=True):
     return cols
 
 
-# --------------------------------------------------------------------------- #
-# Panel construction
-# --------------------------------------------------------------------------- #
+# Panel construction.
 def build_panel(master_data: dict, horizon: int) -> pd.DataFrame:
-    """Stack per-ticker master frames into one date-indexed panel.
-
-    The forward-return label is computed PER TICKER (never across the seam
-    between two tickers) as close[t+H]/close[t]-1, then rows without a full
-    forward window are dropped. The result keeps a real DatetimeIndex and a
-    `ticker` column, so downstream splits can be made by date.
-    """
+    """Combine ticker histories with independently computed forward-return labels."""
     if horizon < 1:
         raise ValueError("horizon must be positive")
     frames = []
@@ -164,9 +139,7 @@ def build_panel(master_data: dict, horizon: int) -> pd.DataFrame:
     return panel
 
 
-# --------------------------------------------------------------------------- #
-# Date-aware expanding-window folds with an embargo
-# --------------------------------------------------------------------------- #
+# Expanding date folds and embargoes.
 @dataclass
 class Fold:
     """Describe the training and validation dates of one chronological split."""
@@ -177,14 +150,7 @@ class Fold:
 
 
 def date_folds(panel: pd.DataFrame, horizon: int, n_splits: int = 4, test_frac: float = 0.25):
-    """Expanding-window folds over unique calendar dates.
-
-    The last `test_frac` of the timeline is reserved as the untouched final test
-    block. The remaining dates are cut into `n_splits` contiguous validation
-    blocks; fold k trains on everything before block k and validates on block k.
-    Training dates within `embargo_for(horizon)` sessions before a block start
-    are dropped so no training label overlaps the validation window.
-    """
+    """Build expanding date folds with label embargoes and a reserved final test block."""
     if horizon < 1 or n_splits < 1 or not 0 < test_frac < 1:
         raise ValueError("Invalid fold configuration")
     dates = np.array(sorted(panel.index.unique()))
@@ -203,7 +169,7 @@ def date_folds(panel: pd.DataFrame, horizon: int, n_splits: int = 4, test_frac: 
         if len(val) == 0:
             continue
         train_end = val[0]
-        # embargo: drop the emb sessions immediately before the val block
+        # Drop the embargo sessions before the validation block.
         train_pool = dev_dates[dev_dates < train_end]
         if emb > 0:
             train_pool = train_pool[:-emb]
@@ -211,15 +177,13 @@ def date_folds(panel: pd.DataFrame, horizon: int, n_splits: int = 4, test_frac: 
             continue
         folds.append(Fold(pd.DatetimeIndex(train_pool), pd.DatetimeIndex(val), "val"))
 
-    # final test fold: train on ALL dev dates (minus embargo), score test block once
+    # Final test fold trains on all development dates minus the embargo.
     train_pool = dev_dates[:-emb] if emb > 0 else dev_dates
     test_fold = Fold(pd.DatetimeIndex(train_pool), pd.DatetimeIndex(test_dates), "test")
     return folds, test_fold
 
 
-# --------------------------------------------------------------------------- #
-# Metrics
-# --------------------------------------------------------------------------- #
+# Forecast metrics.
 def balanced_directional_accuracy(y_true, y_pred):
     """Balanced accuracy of the sign of the forward return."""
     yt = np.sign(np.asarray(y_true))
@@ -249,9 +213,7 @@ def prediction_metrics(y_true, y_pred):
     }
 
 
-# --------------------------------------------------------------------------- #
-# Model back-ends (return predictors), fit per fold, scaler on train only
-# --------------------------------------------------------------------------- #
+# Fit fold-specific regressors with training-only scaling.
 def _fit_predict_xgb(Xtr, ytr, Xva):
     import xgboost as xgb
     from sklearn.preprocessing import RobustScaler
@@ -274,12 +236,7 @@ def _fit_predict_xgb(Xtr, ytr, Xva):
 
 
 def _oos_predictions(panel, feat_cols, horizon, model_fn, n_splits=4):
-    """Run expanding-window folds and collect pooled OUT-OF-SAMPLE predictions.
-
-    Returns a DataFrame [date, ticker, y_true, y_pred, fold_kind] built only from
-    validation/test rows the fold's model never trained on. This same frame is
-    what feeds the prediction metrics AND (later) the PPO agent's OOS inputs.
-    """
+    """Collect predictions on validation and test rows excluded from each fold's training."""
     folds, test_fold = date_folds(panel, horizon, n_splits=n_splits)
     feat_cols = [c for c in feat_cols if c in panel.columns]
     all_folds = folds + [test_fold]
@@ -318,9 +275,7 @@ def _oos_predictions(panel, feat_cols, horizon, model_fn, n_splits=4):
     return pd.concat(rows)
 
 
-# --------------------------------------------------------------------------- #
-# Rule-based signals (baselines A and B)
-# --------------------------------------------------------------------------- #
+# Technical and sentiment rule baselines.
 def technical_rule_signal(row):
     """Interpretable long/flat/short rule (baseline A)."""
     score = 0
@@ -351,29 +306,9 @@ def sentiment_rule_signal(row, thr=0.15):
     return 1 if s > thr else (-1 if s < -thr else 0)
 
 
-# --------------------------------------------------------------------------- #
-# Non-overlapping trading backtest
-# --------------------------------------------------------------------------- #
+# Non-overlapping trading simulation.
 def trading_backtest(panel, signal_by_row, horizon, capital=1000.0, top_k=10, tx_cost=TX_COST):
-    """Long-only, NON-overlapping backtest with two matched benchmarks.
-
-    Signals are generated on rebalance dates spaced `horizon` sessions apart, so
-    a 21-day trade is closed before the next is opened - overlapping trades are
-    never treated as independent uses of the full capital. On each
-    rebalance we equally weight the top-`top_k` names by signal, hold `horizon`
-    sessions, realise the actual forward return, and pay `tx_cost` on turnover.
-
-    Accounting notes:
-      * top-k selection sorts the rows directly by signal;
-      * turnover is weight-based (sum of |delta weight| across the union of
-        names), so trimming a retained name is charged and going fully to cash
-        pays the exit leg;
-      * two benchmarks: a fixed-universe buy-and-hold (equal-weight the names
-        present at the first rebalance, held across the window) and a periodic
-        equal-weight line (re-selected each period);
-      * the drawdown curve includes the initial-capital point, so an immediate
-        first-period loss is captured.
-    """
+    """Simulate non-overlapping top-ranked holdings, turnover costs and two benchmarks."""
     if "trade_return" not in panel:
         raise ValueError("Trading evaluation requires next-session trade_return values")
     dates = np.array(sorted(panel.index.unique()))
@@ -384,13 +319,13 @@ def trading_backtest(panel, signal_by_row, horizon, capital=1000.0, top_k=10, tx
     dates = dates[dates <= complete[complete].index.max()]
     rebal = dates[::horizon]
     equity = capital
-    bh_equity = capital  # TRUE buy-and-hold (fixed initial universe)
-    ew_equity = capital  # periodic equal-weight (re-selected each period)
+    bh_equity = capital  # buy-and-hold on the initial universe
+    ew_equity = capital  # equal weight, re-selected each period
     trades = []
     per_period = []
     prev_weights = {}  # name -> weight held going into this period
     bh_values = {}
-    bh_names = None  # universe locked once, at the first rebalance
+    bh_names = None  # universe fixed at the first rebalance
     missing_benchmark = set()
     ew_valid = True
     for d in rebal:
@@ -402,7 +337,7 @@ def trading_backtest(panel, signal_by_row, horizon, capital=1000.0, top_k=10, tx
             bh_values = {ticker: capital / len(bh_names) for ticker in bh_names}
         day = day.assign(_sig=[signal_by_row(r) for _, r in day.iterrows()])
 
-        # benchmarks (computed every period, whether or not the strategy holds)
+        # Benchmarks are computed every period.
         ew_valid = ew_valid and bool(np.isfinite(day["trade_return"]).all())
         ew_equity *= 1 + day["trade_return"].mean()  # periodic equal-weight
         bh_slice = day[day["ticker"].isin(bh_names)]
@@ -413,7 +348,7 @@ def trading_backtest(panel, signal_by_row, horizon, capital=1000.0, top_k=10, tx
                 bh_values[observation["ticker"]] *= 1 + observation["trade_return"]
         bh_equity = sum(bh_values.values())
 
-        longs = day[day["_sig"] > 0].sort_values("_sig", ascending=False).head(top_k)  # real ranking
+        longs = day[day["_sig"] > 0].sort_values("_sig", ascending=False).head(top_k)  # ranked by signal
         if not np.isfinite(longs["trade_return"]).all():
             return {
                 "valid": False,
@@ -425,8 +360,7 @@ def trading_backtest(panel, signal_by_row, horizon, capital=1000.0, top_k=10, tx
                 "trading_protocol": "next_close_v2",
             }
         holdings = list(longs["ticker"])
-        # WEIGHT-based turnover across the union of names (charges entry AND exit,
-        # including full liquidation to cash, and weight changes among retained)
+        # Charge turnover for entries, exits and changes to retained weights.
         w_new = {t: 1.0 / len(holdings) for t in holdings} if holdings else {}
         turnover = sum(abs(w_new.get(t, 0.0) - prev_weights.get(t, 0.0)) for t in set(w_new) | set(prev_weights))
         cost = transaction_cost(turnover, tx_cost)
@@ -455,8 +389,7 @@ def trading_backtest(panel, signal_by_row, horizon, capital=1000.0, top_k=10, tx
     benchmark_valid = not missing_benchmark
     trades = np.asarray(trades, float)
     period_rets = np.array([p["ret"] for p in per_period], float)
-    # drawdown from an equity curve that INCLUDES the initial-capital point (1.0),
-    # so an immediate first-period loss is not silently dropped
+    # Include initial capital when measuring drawdown.
     cum = np.concatenate([[1.0], np.cumprod(1 + period_rets)]) if len(period_rets) else np.array([1.0])
     max_dd = max_drawdown(cum) if len(cum) else 0.0
     ann = TRADING_DAYS / horizon
@@ -485,22 +418,16 @@ def trading_backtest(panel, signal_by_row, horizon, capital=1000.0, top_k=10, tx
         "sharpe": round(sharpe, 3),
         "avg_turnover": round(float(np.mean([p.get("turnover", 0) for p in per_period])), 3) if per_period else 0.0,
         "total_cost_pct": round(
-            (transaction_cost(float(np.sum([p.get("turnover", 0) for p in per_period])), tx_cost) + terminal_cost) * 100, 3
+            (transaction_cost(float(np.sum([p.get("turnover", 0) for p in per_period])), tx_cost) + terminal_cost)
+            * 100,
+            3,
         ),
     }
 
 
-# --------------------------------------------------------------------------- #
-# Block bootstrap CI (preserves time dependence)
-# --------------------------------------------------------------------------- #
+# Historical range evaluation and bootstrap intervals.
 def range_backtest(master_data: dict, start, end, horizon=None, feature_set="both"):
-    """Leakage-controlled date-range backtest for the UI.
-
-    Trains an XGBoost return-regressor on data strictly before `start` (with an
-    H-session embargo so no training label overlaps the test window), then
-    predicts the forward return for every session in [start, end] and compares it
-    with what actually happened.
-    """
+    """Fit an embargoed regressor before a requested window and score its forecasts."""
     from backend.config.settings import PRIMARY_HORIZON
 
     horizon = int(horizon or PRIMARY_HORIZON)
@@ -517,7 +444,7 @@ def range_backtest(master_data: dict, start, end, horizon=None, feature_set="bot
         else all_features(avail, include_sentiment=(feature_set != "technical"))
     )
 
-    # train strictly before `start`, minus the embargo window
+    # Train before start, minus the embargo window.
     train_dates = np.array(sorted(d for d in panel.index.unique() if d < start))
     if emb > 0:
         train_dates = train_dates[:-emb]
@@ -606,15 +533,7 @@ def block_bootstrap_ci(values, block=5, n_boot=1000, alpha=0.05, seed=42):
 
 
 def paired_date_bootstrap(diff_by_date, n_boot=1000, alpha=0.05, seed=42):
-    """Bootstrap CI of the mean PAIRED difference by resampling whole DATES.
-
-    `diff_by_date` maps a date -> array of per-observation paired differences
-    (model minus baseline) on that date, computed on MATCHED (date, ticker) rows.
-    Resampling entire dates (not individual rows) preserves the cross-sectional
-    dependence within a date and the serial structure across the panel, which a
-    flat per-row bootstrap of overlapping returns destroys. A CI that excludes 0
-    is evidence the model beats the baseline on paired observations.
-    """
+    """Bootstrap paired differences using date blocks to retain local time dependence."""
     dates = sorted(diff_by_date.keys())
     per_date = [np.asarray(diff_by_date[d], float) for d in dates]
     per_date = [a[np.isfinite(a)] for a in per_date]
@@ -651,15 +570,7 @@ def paired_date_bootstrap(diff_by_date, n_boot=1000, alpha=0.05, seed=42):
 
 
 def paired_metric_ci(preds_model, preds_base, metric="abs_error", n_boot=1000, seed=42):
-    """Paired model-vs-baseline CI on MATCHED (date, ticker) observations.
-
-    Both frames are the pooled OOS predictions from `_oos_predictions` (columns
-    y_true, y_pred, ticker). They are inner-joined on (date, ticker) so only rows
-    both models scored are compared, then the per-observation IMPROVEMENT of the
-    model over the baseline is bootstrapped by date:
-      metric="abs_error"  -> baseline |err| minus model |err|  (>0 = model better)
-      metric="dir_hit"    -> model correct-sign minus baseline correct-sign
-    """
+    """Estimate paired improvement intervals on matching ticker-date observations."""
     if preds_model is None or preds_base is None or preds_model.empty or preds_base.empty:
         return {"error": "missing predictions"}
     a = preds_model.copy()

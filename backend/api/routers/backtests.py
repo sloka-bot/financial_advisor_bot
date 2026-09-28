@@ -31,12 +31,7 @@ def run_backtest(req: BacktestRequest):
 
 @router.post("/api/backtest-predict")
 def backtest_predict(req: BacktestPredictRequest):
-    """Leakage-controlled per-ticker backtest for the Backtest tab.
-
-    Delegates to experiments.range_backtest, which trains an XGBoost regressor
-    strictly before the window (with an H-session embargo) and predicts the H-day
-    forward return for each date in the window.
-    """
+    """Backtest horizon returns using a model fitted before the window with an embargo."""
     ticker = req.ticker
     start_date = req.start_date
     window = req.window
@@ -63,17 +58,14 @@ def backtest_predict(req: BacktestPredictRequest):
         "trained_until": rb.get("trained_until"),
         "leakage_free": True,
         "n_predictions": rb.get("n_predictions"),
-        "metrics": rb.get("metrics"),  # MAE, balanced dir-acc, IC vs actual
-        "rows": rb.get("rows"),  # predicted vs actual H-day return per date
+        "metrics": rb.get("metrics"),  # MAE, balanced directional accuracy and IC
+        "rows": rb.get("rows"),  # predicted and actual horizon return per date
     }
 
 
 @router.post("/api/backtest-range")
 def backtest_range(req: BacktestRangeRequest):
-    """Leakage-free date-range backtest for the UI: trains ONLY on data before
-    `start_date`, predicts every session in [start_date, end_date], and compares
-    to what actually happened. Unlike /api/backtest-predict this never uses the
-    fully-trained deployed model on its own test window."""
+    """Fit before the requested window and compare forecasts with observed horizon returns."""
     from backend.evaluation.experiments import range_backtest
 
     tickers = req.tickers

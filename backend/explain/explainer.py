@@ -1,22 +1,4 @@
-"""
-explainer.py
-
-Generates natural language explanations for each recommendation.
-Tries three sources in order: the local Ollama LLM (best quality),
-a SHAP-driven template that references the most important model features,
-and a fallback template built from the signal data.
-
-Ollama output is not trusted blindly: before it is used, it is checked so
-that every number it cites was one we actually put in the prompt. If it
-introduces any other figure (an invented price, probability or return) the
-text is discarded and the deterministic template is used instead. This gates
-the LIVE explanation path, not just the offline verifier. The check covers
-numeric VALUES only - it does not verify that a number was attached to the
-correct field or unit.
-
-The SHAP explanations reference Lundberg and Lee (2017) for feature
-attribution methodology.
-"""
+"""Generate checked Ollama explanations with SHAP and structured-text fallbacks."""
 
 import logging
 import pickle
@@ -31,29 +13,24 @@ from backend.explain import explainer_modes as em
 logger = logging.getLogger(__name__)
 MODELS_DIR = Path("models")
 
-# tries Ollama first (local LLM) - SHAP template - plain template
-# each level gracefully catches failures so the API never stalls
+# Try Ollama, then SHAP-based text, then the signal template.
 
-# All Ollama endpoints/model come from the central settings (single source of
-# truth) - so the chat, the explanation generator and the health check can never
-# disagree about which server/model is in use.
+# Read Ollama configuration from shared service settings.
 OLLAMA_URL = f"{settings.OLLAMA_URL}/api/generate"
 OLLAMA_TAGS = f"{settings.OLLAMA_URL}/api/tags"
 OLLAMA_MODEL = settings.OLLAMA_MODEL
-OLLAMA_TIMEOUT = 8
+OLLAMA_TIMEOUT = 30
 
 
 class Explainer:
-    # Generate a natural language explanation for one recommendation
-    """Explain recommendation evidence using grounded text or a local template."""
+    """Explain recommendation evidence using checked text or a local template."""
 
     def explain(self, rec: dict, feature_row=None) -> str:
-        """Return a grounded Ollama explanation, falling back to the data template."""
+        """Return a checked Ollama explanation, falling back to the data template."""
         template = self._template(rec, feature_row)
         ollama_text = self._ask_ollama(rec)
         return ollama_text if ollama_text else template
 
-    # Run explain() over every recommendation in the list
     def explain_batch(self, recommendations: list, master_data: dict = None) -> list:
         """Attach explanation text to each recommendation in place."""
         for rec in recommendations:
@@ -71,7 +48,7 @@ class Explainer:
         except Exception:
             return False
 
-    # Call the local Ollama LLM and return the response text
+    # Ask the local Ollama model and return its reply.
     def _ask_ollama(self, rec: dict) -> str | None:
         ticker = rec.get("ticker", "")
         signal = rec.get("signal", "HOLD")
@@ -83,8 +60,7 @@ class Explainer:
         prob_pct = rec.get("prob_up_pct")
         horizon = int(rec.get("horizon") or settings.PRIMARY_HORIZON)
 
-        # Describe the models accurately and by horizon; never invent a return when
-        # the estimate is missing, and never call a 21-session view "tomorrow".
+        # Describe each available forecast with its model and trading horizon.
         if exp_pct is not None:
             forecast = f"LSTM expected return over ~{horizon} trading days: {float(exp_pct):+.2f}%"
         elif prob_pct is not None:
@@ -115,13 +91,13 @@ class Explainer:
             if r.status_code == 200:
                 text = r.json().get("response", "").strip()
                 if len(text) > 20:
-                    ok, invented = self._numbers_ok(text, prompt)
-                    faithful, fissues = self._faithful_ok(text, rec)
+                    ok, unsupported_values = self._validate_numeric_claims(text, prompt)
+                    faithful, fissues = self._validate_claim_context(text, rec)
                     if ok and faithful:
                         return text
                     logger.warning(
                         f"Ollama explanation for {ticker} rejected "
-                        f"(unsupported_numbers={invented}, faithfulness={fissues}); "
+                        f"(unsupported_numbers={unsupported_values}, faithfulness={fissues}); "
                         "using template instead"
                     )
         except requests.exceptions.ConnectionError:
@@ -133,38 +109,21 @@ class Explainer:
         return None
 
     @staticmethod
-    def _numbers_ok(text, prompt, tol=0.011):
-        """True iff every quantitative claim in `text` matches a number that was
-        supplied to the model in `prompt`. Returns (ok, [unsupported_numbers]).
-
-        The model may rephrase freely but cannot introduce a figure that was not
-        among the inputs. Provenance (ISO dates) and version tokens are stripped
-        before the comparison. This checks numeric VALUES only; it does not check
-        that a number was attached to the right field, unit or horizon.
-        """
+    def _validate_numeric_claims(text, prompt, tol=0.011):
+        """Return numeric support status and unsupported values, without checking field or unit."""
         allowed = [float(x) for x in re.findall(r"-?\d+\.?\d*", prompt)]
         bad = []
-        for n in em._claim_numbers(text):
+        for n in em._extract_claim_numbers(text):
             if not any(abs(n - a) <= tol + abs(a) * 0.02 for a in allowed):
                 bad.append(n)
         return (len(bad) == 0, bad)
 
     @staticmethod
-    def _faithful_ok(text, rec):
-        """Field/claim checks the numeric-provenance guard cannot do. Returns
-        (ok, [issues]). Rejects:
-          * guarantee / risk-free language (carries no number, so _numbers_ok
-            passes it);
-          * a $-amount that is not the current price (so a confidence value shown
-            as "$61" is caught even though 61 is a legitimate input number);
-          * a stated "N (trading) day(s)" horizon that is not the model's, and
-            "tomorrow"/"next-day" wording when the horizon is longer than a day.
-        Percent figures are NOT unit-checked here because the prompt legitimately
-        contains momentum% and RSI alongside the forecast.
-        """
+    def _validate_claim_context(text, rec):
+        """Check guarantee wording, dollar values and horizon claims; percentages remain unchecked."""
         issues = []
         low = text.lower()
-        for pat in em.BANNED_PATTERNS:
+        for pat in em.UNSUPPORTED_CLAIM_PATTERNS:
             if re.search(pat, low):
                 issues.append(f"banned phrase /{pat}/")
         price = rec.get("current_price")
@@ -181,8 +140,7 @@ class Explainer:
         return (len(issues) == 0, issues)
 
     def _shap_drivers(self, feature_row) -> dict | None:
-        # SHAP TreeExplainer on the trained XGBoost - shows which features
-        # pushed this specific prediction up or down (local feature attribution)
+        # Attribute the current XGBoost prediction to its input features.
         try:
             import numpy as np
             import pandas as pd
@@ -203,11 +161,7 @@ class Explainer:
                 feat_cols = pickle.load(f)
 
             row = feature_row if isinstance(feature_row, pd.DataFrame) else pd.DataFrame([feature_row])
-            # Use the EXACT training feature set and ORDER (feat_cols.pkl), filling
-            # any absent column with 0. Selecting all numeric row columns (which
-            # include prices and target columns dropped during training) fed the
-            # scaler/model the wrong shape and order - so the attribution was
-            # meaningless and usually raised, then got silently swallowed.
+            # Match the saved feature order before applying the scaler and SHAP explainer.
             X_df = row.reindex(columns=feat_cols, fill_value=0.0)
             X_df = X_df.apply(pd.to_numeric, errors="coerce").fillna(0.0)
             X = scaler.transform(X_df.values)
@@ -219,7 +173,7 @@ class Explainer:
             logger.warning(f"SHAP driver computation failed (explanation continues without it): {e}")
             return None
 
-    # Build a fallback explanation from the raw signal numbers
+    # Build a template explanation from the signal values.
     def _template(self, rec: dict, feature_row=None) -> str:
         ticker = rec.get("ticker", "")
         signal = rec.get("signal", "HOLD")
@@ -240,9 +194,7 @@ class Explainer:
         else:
             parts.append(f"{ticker} scores {score:.0f}/100. HOLD until a clearer signal.")
 
-        # Forecast wording from explicit model + horizon + availability fields:
-        # the two models are reported separately, the horizon is ~21 sessions, and
-        # a missing estimate stays 'unavailable' rather than being shown as 0%.
+        # Report each model's horizon and retain unavailable estimates as missing.
         exp_pct = rec.get("expected_return_pct")  # LSTM return estimate (%), may be None
         prob_pct = rec.get("prob_up_pct")  # XGBoost P(rise) (%), may be None
         horizon = int(rec.get("horizon") or settings.PRIMARY_HORIZON)

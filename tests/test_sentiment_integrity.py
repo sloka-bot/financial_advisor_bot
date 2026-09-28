@@ -1,4 +1,4 @@
-"""News timing and inference failures must not create fabricated sentiment evidence."""
+"""News timing and sentiment inference failure handling."""
 
 import json
 
@@ -73,8 +73,7 @@ def test_incomplete_classification_batch_is_rejected(tmp_path):
 
 
 class _FakeTokenizerPipe:
-    """Test double for a transformers pipeline: classifies and exposes a tokenizer
-    so truncation recording can be exercised without downloading FinBERT."""
+    """Test pipeline that classifies text and exposes a tokenizer."""
 
     def __init__(self, n_tokens=10, label="neutral", score=0.9):
         self._n = n_tokens
@@ -89,8 +88,7 @@ class _FakeTokenizerPipe:
 
 
 def test_no_news_day_is_distinct_from_neutral_news_day(tmp_path):
-    # Hard invariant (#12): a day with neutral articles and a day with NO news must
-    # never collapse to the same representation.
+    # A neutral-news day and a no-news day stay distinct.
     news = tmp_path / "news"
     news.mkdir()
     (news / "HASN.json").write_text(
@@ -100,7 +98,7 @@ def test_no_news_day_is_distinct_from_neutral_news_day(tmp_path):
     analyzer._pipe = lambda batch: [{"label": "neutral", "score": 0.9} for _ in batch]
 
     neutral_news = analyzer.analyze_ticker("HASN")
-    no_news = analyzer.analyze_ticker("MISSING")  # no file -> neutral fallback
+    no_news = analyzer.analyze_ticker("MISSING")  # missing file gives a no-news row
 
     assert (neutral_news["sent_no_news"] == 0).all()
     assert (neutral_news["sent_news_count"] >= 1).all()
@@ -110,7 +108,7 @@ def test_no_news_day_is_distinct_from_neutral_news_day(tmp_path):
 
 
 def test_finbert_truncation_is_recorded(tmp_path):
-    # #11: inputs exceeding max_length are flagged and token counts saved.
+    # Inputs over max_length are flagged with token counts.
     news = tmp_path / "news"
     news.mkdir()
     (news / "LONG.json").write_text(
@@ -126,34 +124,33 @@ def test_finbert_truncation_is_recorded(tmp_path):
 
 
 def test_decision_date_before_close_is_same_session():
-    # 10:00 ET (before the 16:00 close) -> same day's session
+    # 10:00 ET, before the close, maps to the same session
     assert SentimentAnalyzer._decision_date("2023-06-01T14:00:00Z").date() == pd.Timestamp("2023-06-01").date()
 
 
 def test_decision_date_after_close_is_next_session():
-    # 19:30 ET (after close) -> next session
+    # 19:30 ET, after the close, maps to the next session
     assert SentimentAnalyzer._decision_date("2023-06-01T23:30:00Z").date() == pd.Timestamp("2023-06-02").date()
 
 
 def test_decision_date_weekend_maps_to_next_trading_session():
-    # Saturday -> following Monday
+    # Saturday maps to Monday
     assert SentimentAnalyzer._decision_date("2023-06-03T12:00:00Z").date() == pd.Timestamp("2023-06-05").date()
 
 
 def test_decision_date_holiday_skips_to_next_session():
-    # US market holiday (Independence Day) -> next session
+    # Independence Day maps to the next session
     assert SentimentAnalyzer._decision_date("2023-07-04T12:00:00Z").date() == pd.Timestamp("2023-07-05").date()
 
 
 def test_decision_date_date_only_delays_at_least_a_day():
-    # Date-only publications have unknown intraday timing: usable no earlier than
-    # the following day's session.
+    # Date-only publications map to the following day or later.
     d = SentimentAnalyzer._decision_date("2023-06-01")
     assert d is not None and d.date() >= pd.Timestamp("2023-06-02").date()
 
 
 def test_decision_date_respects_early_close():
-    # Day after Thanksgiving has a 13:00 ET early close.
+    # Day after Thanksgiving closes at 13:00 ET.
     before = SentimentAnalyzer._decision_date("2023-11-24T17:00:00Z")  # 12:00 ET, before
     after = SentimentAnalyzer._decision_date("2023-11-24T19:00:00Z")  # 14:00 ET, after
     assert before.date() == pd.Timestamp("2023-11-24").date()

@@ -1,8 +1,4 @@
-/*
- * Advisor chat with daily memory and a beginner/normal mode toggle.
- * Only renders once - switching tabs and back preserves the full conversation.
- * Chat history resets at midnight (keyed by date).
- */
+/* Advisor chat with daily history and a beginner/normal mode toggle. */
 
 const QUICK_CHIPS = [
   "What should I buy today?",
@@ -41,7 +37,7 @@ function readTodayHistory() {
 function writeTodayHistory(messages) {
   try {
     localStorage.setItem(chatDayKey(), JSON.stringify(messages));
-    // clean up yesterday's chat - only keep today
+    // Keep only today's chat history.
     for (let i = 0; i < localStorage.length; i++) {
       const k = localStorage.key(i);
       if (k?.startsWith("chat_") && k !== chatDayKey()) {
@@ -54,7 +50,7 @@ function writeTodayHistory(messages) {
 
 function renderChatbot() {
   if (chatInitialized) {
-    // Tab switch - refresh Ollama status but keep the conversation intact
+    // Refresh Ollama status and keep the conversation on tab switch.
     refreshOllamaStatus();
     return;
   }
@@ -81,6 +77,7 @@ function renderChatbot() {
           <span style="font-size:11px;color:var(--txt-3);margin-left:4px" id="mode-desc">
             Concise, data-driven answers
           </span>
+          <button class="btn-secondary" style="margin-left:auto;font-size:12px;padding:4px 12px" onclick="clearChat()">Clear chat</button>
         </div>
 
         <div class="chat-messages" id="chat-msgs"></div>
@@ -132,7 +129,7 @@ function renderChatbot() {
   refreshOllamaStatus();
 
   refreshAvatarConfig();
-  // Paint saved history back onto the screen
+  // Render saved history.
   if (chatHistory.length) {
     chatHistory.forEach((m) => addChatBubble(m.role, m.content, false));
     document.getElementById("chat-msgs")?.scrollTo(0, 999999);
@@ -211,11 +208,11 @@ async function askAdvisor(text, context) {
     );
     return data.reply || "No response received.";
   } catch {
-    return offlineFallback(text.toLowerCase());
+    return offlineReply(text.toLowerCase());
   }
 }
 
-function offlineFallback(msg) {
+function offlineReply(msg) {
   if (!state.portfolioData)
     return "Chat is temporarily unavailable. Your saved holdings are unchanged.";
   const rm = state.portfolioData?.portfolio?.risk_metrics || {};
@@ -252,6 +249,7 @@ async function refreshOllamaStatus() {
           <span style="font-size:12px;font-weight:600;color:var(--green)">Running</span>
         </div>
         <div style="font-size:11.5px;color:var(--txt-2)">${models.length ? escapeHtml(models.slice(0, 3).join(", ")) : "No model connected"}</div>
+        ${!models.some((m) => m.includes("llama")) ? '<div style="font-size:11px;color:var(--amber);margin-top:4px">Run: ollama pull llama3.2</div>' : ""}
 `;
     } else {
       el.innerHTML = `<div style="display:flex;align-items:center;gap:8px">
@@ -278,7 +276,7 @@ function addChatBubble(role, text, scroll = true) {
   avatar.textContent = role === "user" ? "👤" : "🤖";
   const bubble = document.createElement("div");
   bubble.className = "chat-bubble";
-  bubble.innerHTML = html; // only escaped text + our own <strong>/<br>
+  bubble.innerHTML = html; // escaped text with <strong> and <br> only
   div.appendChild(avatar);
   div.appendChild(bubble);
   msgs.appendChild(div);

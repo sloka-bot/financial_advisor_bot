@@ -34,9 +34,7 @@ from backend.universe.universe_builder import UniverseBuilder
 
 logger = logging.getLogger(__name__)
 
-# Single shared instances of every pipeline component.
-# These are module-level so they persist across requests and
-# the trained model weights stay in memory between API calls.
+# Retain shared services and model weights across API requests.
 universe_builder = UniverseBuilder()
 downloader = MarketDataDownloader()
 cleaner = DataCleaner()
@@ -48,15 +46,12 @@ sentiment = SentimentAnalyzer()
 xgb_model = XGBoostForecaster()
 lstm_model = LSTMForecaster()
 
-# Per-horizon "side" forecasters for the 1/5-day predictor. The primary horizon
-# uses the deployed models above; short horizons lazily load their own artifacts
-# from models/xgboost/h{H} and models/lstm/h{H} (trained by scripts/train_horizons.py).
+# Load short-horizon artifacts on demand; reuse primary-horizon models.
 _horizon_models = {}
 
 
 def horizon_models(horizon):
-    """Return cached (xgb, lstm) forecasters for a horizon; the primary horizon
-    reuses the deployed models."""
+    """Return cached horizon forecasters, reusing deployed models for the primary horizon."""
     h = int(horizon)
     if h == settings.PRIMARY_HORIZON:
         return xgb_model, lstm_model
@@ -68,6 +63,8 @@ def horizon_models(horizon):
         )
         _horizon_models[h] = pair
     return pair
+
+
 ranker = StockRanker()
 recommender = RecommendationEngine()
 explainer = Explainer()
@@ -77,9 +74,7 @@ regime_detector = RegimeDetector()
 model_registry = ModelRegistry()
 drift_monitor = DriftMonitor()
 
-# Shared dictionary written by the background pipeline thread and read
-# by the polling endpoint. All writes go through state_lock to prevent
-# race conditions between the worker thread and incoming requests.
+# Protect pipeline progress updates with the shared state lock.
 pipeline_state = {
     "step": "idle",
     "message": "",
@@ -88,8 +83,8 @@ pipeline_state = {
     "processed_tickers": sorted(p.stem.removesuffix("_master") for p in Path("data/features").glob("*_master.csv")),
 }
 state_lock = threading.Lock()
-model_lock = threading.RLock()  # serialises model training vs inference
-_launch_lock = threading.Lock()  # ensures only one pipeline launches at a time
+model_lock = threading.RLock()  # serialises training and inference
+_launch_lock = threading.Lock()  # one pipeline launch at a time
 
 TRAINING_STEPS = {
     "starting",
@@ -106,8 +101,7 @@ TRAINING_STEPS = {
 }
 
 
-# Non-equity instruments that should never appear as stock recommendations.
-# These can end up in the universe if the data source includes ETF proxies.
+# Exclude non-equity proxy instruments from stock recommendations.
 NON_EQUITY = {
     "BND",
     "TLT",
@@ -145,12 +139,7 @@ def _reject_if_training():
 
 
 def start_pipeline(req):
-    """Launch the pipeline in a dedicated daemon thread, ONE run at a time.
-
-    Using a real thread (not Starlette BackgroundTasks) keeps the request
-    threadpool free so /api/pipeline-status stays responsive during a long
-    run, and the guard prevents two runs mutating the shared models at once.
-    """
+    """Start one background training thread while keeping request workers available."""
     with _launch_lock:
         if _pipeline_active():
             raise HTTPException(409, "A pipeline run is already in progress")
@@ -159,9 +148,7 @@ def start_pipeline(req):
 
 
 def _stage_progress(step, message, lo, hi):
-    """Build a progress callback for a per-ticker batch stage. Maps (i, n) into the
-    stage's [lo, hi] band and pushes it to the pipeline state so the UI bar advances
-    steadily through the stage instead of freezing at its start value."""
+    """Map ticker progress into the pipeline stage's displayed percentage range."""
 
     def _cb(i, n):
         pct = lo + int((hi - lo) * i / max(1, n))
@@ -201,88 +188,102 @@ def pipeline_worker(req: RunRequest):
 
 
 def queue_recommendations(user_id, tickers, risk_profile, budget, *, pipeline_internal=False):
-    """Score all processed tickers and write the top signals to the user's
-    pending recommendation queue. SELL signals are only generated for stocks
-    the user currently holds. Duplicates are prevented by tracking seen pairs."""
+    """Store ranked, individually feasible signals for display three at a time."""
+    # Restrict live recommendations to current constituents with usable prices.
+    try:
+        current_members = set(universe_builder.members())
+        if current_members:
+            tickers = [t for t in tickers if t in current_members]
+    except Exception:
+        pass
     predictions, master_data = collect_predictions(tickers, pipeline_internal=pipeline_internal)
+    logger.info(
+        "queue_recommendations[%s]: %d tickers in universe, %d predictions produced",
+        user_id,
+        len(tickers),
+        len(predictions),
+    )
     if not predictions:
+        user_store.add_recommendations(user_id, [])
+        logger.warning(
+            "queue_recommendations[%s]: NO predictions - every ticker failed the "
+            "freshness / execution-price / model checks",
+            user_id,
+        )
         return
     ranked = ranker.rank(predictions, master_data, risk_profile)
-    result = recommender.recommend(ranked, risk_profile=risk_profile, top_n=3)  # show 3 top picks at a time
+    result = recommender.recommend(ranked, risk_profile=risk_profile, top_n=3)
+    all_signals = result.get("all_signals", [])
 
     profile = user_store.get(user_id) or {}
     _pf = profile.get("portfolio", {}) or {}
     current_holdings = {h["ticker"] for h in _pf.get("holdings", [])}
     universe_set = set(tickers)
-
-    # Simulated running book so we only surface BUYs the user can actually approve
-    # under their risk caps (max position weight + cash floor). Each accepted BUY
-    # advances the simulated cash/holdings, so the whole batch is jointly feasible.
-    sim_holdings = [dict(h) for h in _pf.get("holdings", [])]
-    sim_cash = float(_pf.get("cash", budget) or 0.0)
+    previous_visible = {r.get("ticker") for r in profile.get("pending_recommendations", [])[:3]}
+    holdings = [dict(h) for h in _pf.get("holdings", [])]
+    cash = float(_pf.get("cash", budget) or 0.0)
+    for held in holdings:
+        ticker = held["ticker"]
+        if ticker not in master_data:
+            frame = fusion.load_master(ticker)
+            if frame is not None:
+                master_data[ticker] = frame
 
     recs = []
     seen = set()
-    for signal in result.get("all_signals", []):
-        ticker_sym = signal["ticker"]
-
-        if ticker_sym not in universe_set or ticker_sym in NON_EQUITY:
+    for signal in all_signals:
+        ticker = signal["ticker"]
+        action = signal["signal"]
+        if ticker in seen or ticker in previous_visible or ticker not in universe_set or ticker in NON_EQUITY:
             continue
-        if signal["signal"] == "SELL" and ticker_sym not in current_holdings:
+        if action not in ("BUY", "SELL") or (action == "SELL" and ticker not in current_holdings):
             continue
-        if signal["signal"] not in ("BUY", "SELL"):
+        simulated = portfolio_manager.apply_recommendation(
+            {"action": action, "ticker": ticker, "predicted_return": signal.get("predicted_return")},
+            holdings,
+            cash,
+            master_data,
+            risk_profile=risk_profile,
+        )
+        if simulated.get("error") or simulated.get("respects_profile") is False:
             continue
-
-        key = (ticker_sym, signal["signal"])
-        if key in seen:
-            continue
-        seen.add(key)
-
-        # Feasibility gate: never queue a BUY the risk caps leave no room for, so the
-        # user is not offered a recommendation that fails on approval.
-        if signal["signal"] == "BUY":
-            sim = portfolio_manager.apply_recommendation(
-                {"action": "BUY", "ticker": ticker_sym, "predicted_return": signal.get("predicted_return", 0)},
-                sim_holdings,
-                sim_cash,
-                master_data,
-                risk_profile=risk_profile,
-            )
-            if sim.get("error") or sim.get("respects_profile") is False:
-                continue  # no room under caps - skip this unactionable BUY
-            sim_holdings = sim.get("holdings", sim_holdings)
-            sim_cash = float(sim.get("cash", sim_cash))
-
-        df = master_data.get(ticker_sym)
-        _pp = finite_number(signal.get("prob_up_pct"))
+        seen.add(ticker)
+        probability = finite_number(signal.get("prob_up_pct"))
         confidence = portfolio_manager.confidence_score(
-            ticker_sym,
-            df,
-            (finite_number(signal.get("predicted_return"), 0)) / 100,
-            prob_up=(_pp / 100 if _pp is not None else None),
+            ticker,
+            master_data.get(ticker),
+            finite_number(signal.get("predicted_return"), 0) / 100,
+            prob_up=probability / 100 if probability is not None else None,
         )
         reason = (
             portfolio_manager._buy_reason(signal, confidence)
-            if signal["signal"] == "BUY"
-            else f"{ticker_sym} rated SELL - composite score {signal.get('composite_score', 0):.0f}/100."
+            if action == "BUY"
+            else (f"{ticker} meets the model's SELL thresholds. Review the proposed reduction before approval.")
         )
         recs.append(
             {
-                "action": signal["signal"],
-                "ticker": ticker_sym,
-                "signal": signal["signal"],
-                "score": signal.get("composite_score", 50),
+                "action": action,
+                "ticker": ticker,
+                "signal": action,
+                "score": signal.get("composite_score"),
                 "confidence": confidence["overall"],
                 "factors": confidence["factors"],
                 "reason": reason,
-                "predicted_return": signal.get("predicted_return", 0),
+                "predicted_return": signal.get("predicted_return"),
             }
         )
-        if len(recs) >= 3:  # show at most 3 actionable recommendations at a time
-            break
 
     user_store.add_recommendations(user_id, recs)
-    logger.info(f"Queued {len(recs)} recommendations for {user_id}")
+    _sigs = result.get("all_signals", [])
+    logger.info(
+        "queue_recommendations[%s]: %d signals (%d BUY / %d SELL), %d recommendations queued: %s",
+        user_id,
+        len(_sigs),
+        sum(1 for x in _sigs if x.get("signal") == "BUY"),
+        sum(1 for x in _sigs if x.get("signal") == "SELL"),
+        len(recs),
+        [r["ticker"] for r in recs],
+    )
 
     for r in recs:
         drift_monitor.log_recommendation(
@@ -295,19 +296,7 @@ def queue_recommendations(user_id, tickers, risk_profile, budget, *, pipeline_in
 
 
 def collect_predictions(tickers, *, pipeline_internal=False):
-    """Run both predictors over each ticker's master dataset and return their
-    outputs as SEPARATE, named fields - never averaged. XGBoost is a direction
-    classifier (probability of a rise); LSTM is a return regressor (estimated
-    return in decimal). Each entry also carries the horizon, the observation date
-    and which models were available, so consumers can never silently treat one
-    number as the other.
-
-    Returns (preds, master_data) where preds[ticker] = {
-        'prob_up': float|None,          # P(rise) over the horizon, from XGBoost
-        'expected_return': float|None,  # estimated horizon return (decimal), LSTM
-        'horizon': int, 'as_of': 'YYYY-MM-DD',
-        'xgb_available': bool, 'lstm_available': bool }.
-    """
+    """Return separate horizon probabilities and return estimates with observation metadata."""
     if not pipeline_internal:
         _reject_if_training()
     horizon = settings.PRIMARY_HORIZON

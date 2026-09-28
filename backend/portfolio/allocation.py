@@ -1,24 +1,4 @@
-"""
-allocation.py
-
-The single shared portfolio-construction + execution layer (consolidation).
-
-Both the live app and any experimental method build a book through here, so
-transaction costs, share rounding, cash accounting and risk-constraint
-enforcement are identical everywhere.
-
-Firewall (per the project architecture): the allocation is computed ONLY from
-historical market data (returns + covariance) and the risk profile. It does NOT
-consume XGBoost / LSTM / HMM output. Model predictions and sentiment may be
-attached to a holding as DISPLAY-ONLY metadata (`ml_meta`); they never influence
-the weights.
-
-Expected returns  : annualised historical mean (trailing `lookback` sessions).
-Covariance        : Ledoit-Wolf shrinkage via MarkowitzOptimizer.covariance.
-Optimiser         : constrained mean-variance (per-profile max_weight / min_cash
-                    / risk-aversion); cost-aware when current holdings are given.
-Execution         : whole-share rounding + fees that reconcile to the budget.
-"""
+"""Allocate from historical returns and risk limits; attach forecasts as display metadata."""
 
 import logging
 
@@ -31,19 +11,13 @@ from backend.portfolio.markowitz import MarkowitzOptimizer, validate_allocation
 
 logger = logging.getLogger(__name__)
 
-DEFAULT_LOOKBACK = 252  # ~1 trading year for return/cov estimation
-MAX_CANDIDATES = 40  # cap universe for a stable covariance matrix
-MIN_HISTORY = 60  # a name needs at least this many closes to be eligible
+DEFAULT_LOOKBACK = 252  # about one trading year for return and covariance estimates
+MAX_CANDIDATES = 40  # universe cap for a stable covariance matrix
+MIN_HISTORY = 60  # minimum closes for eligibility
 
 
 def _returns_frame(master_data: dict, tickers: list, lookback: int) -> pd.DataFrame:
-    """Daily-return matrix ALIGNED ON DATES (not row position).
-
-    Covariance is only meaningful when it compares returns from the same dates,
-    so each ticker's returns keep their DatetimeIndex and are joined on it; the
-    common overlapping window is then taken, so returns are aligned by date rather
-    than by position.
-    """
+    """Build a daily-return matrix aligned on common observation dates."""
     series = {}
     for t in tickers:
         df = master_data.get(t)
@@ -60,18 +34,15 @@ def _returns_frame(master_data: dict, tickers: list, lookback: int) -> pd.DataFr
             series[t] = r
     if not series:
         return pd.DataFrame()
-    # outer-join on the date index, take the recent window, then keep only dates
-    # where every retained name has a return (a genuine common history).
+    # Keep recent dates with observed returns for every retained ticker.
     frame = pd.DataFrame(series).sort_index().tail(lookback)
-    frame = frame.dropna(axis=1, thresh=MIN_HISTORY)  # drop names too sparse in the window
-    frame = frame.dropna(axis=0, how="any")  # common dates across all names
+    frame = frame.dropna(axis=1, thresh=MIN_HISTORY)  # drop sparse names
+    frame = frame.dropna(axis=0, how="any")  # common dates across names
     return frame
 
 
 def _liquidity_screen(master_data: dict, tickers: list, lookback: int, keep: int) -> list:
-    """Non-predictive universe screen: keep the most liquid names (avg dollar
-    volume). Purely mechanical - uses no model output - so the firewall holds.
-    Falls back to history length when volume is unavailable."""
+    """Select liquid stocks by dollar volume, falling back to available history length."""
     scored = []
     for t in tickers:
         df = master_data.get(t)
@@ -83,7 +54,7 @@ def _liquidity_screen(master_data: dict, tickers: list, lookback: int, keep: int
         if "volume" in tail.columns:
             score = float((tail["close"] * tail["volume"]).mean())
         else:
-            score = float(len(tail))  # no volume -> prefer longer history
+            score = float(len(tail))  # without volume, prefer longer history
         scored.append((score, t))
     scored.sort(reverse=True)
     return [t for _, t in scored[:keep]]
@@ -100,18 +71,16 @@ def build_markowitz_portfolio(
     max_candidates: int = MAX_CANDIDATES,
     tx_cost: float = TX_COST,
     strict: bool = False,
+    target_positions: int | None = None,
 ) -> dict:
-    """Construct a portfolio via the constrained optimiser from HISTORICAL data.
-
-    Returns a {'portfolio': {...}} dict consumed by the API and the frontend. `ml_meta[ticker]` (if
-    given) supplies display-only predicted_return / sentiment / composite_score.
-    `current_holdings` (list of {ticker, shares}) switches the optimiser into
-    cost-aware mode so a rebalance only trades when it is worth the cost.
-    """
+    """Build historical allocations with optional turnover costs and display-only forecasts."""
     mkw = MarkowitzOptimizer(tx_cost=tx_cost)
     ml_meta = ml_meta or {}
 
-    universe = _liquidity_screen(master_data, candidate_tickers, lookback, max_candidates)
+    eligible = list(dict.fromkeys(candidate_tickers))
+    if target_positions is not None:
+        eligible = [t for t in eligible if executable_price(master_data.get(t)) is not None]
+    universe = _liquidity_screen(master_data, eligible, lookback, max_candidates)
     rets = _returns_frame(master_data, universe, lookback)
     tickers = list(rets.columns)
     if not tickers:
@@ -121,16 +90,10 @@ def build_markowitz_portfolio(
     cov = mkw.covariance(rets[tickers])
     prices = {t: executable_price(master_data[t]) or 0.0 for t in tickers}
 
-    # cost-aware rebalance if we were told the current book
+    # Cost-aware rebalance when the current book is known.
     current_weights = None
     if current_holdings:
-        # Weight each held name over the WHOLE portfolio value (invested + cash) -
-        # i.e. the `budget` passed in - so current weights sit on the SAME base as
-        # the optimiser's target weights (fractions of the budget, which includes
-        # the cash slot). Using invested-only as the base overstated every weight
-        # and distorted the turnover/cost penalty. A held name outside the
-        # optimiser's universe still consumes budget here, so it is not treated as
-        # free cash to buy into.
+        # Measure existing weights against total portfolio value, including cash.
         base = (
             float(budget)
             if (budget and float(budget) > 0)
@@ -148,48 +111,63 @@ def build_markowitz_portfolio(
             }
 
     res = mkw.optimize(tickers, mu, cov, risk_profile, current_weights=current_weights, strict=strict)
-    # An optimiser failure must not be turned into an all-cash "target": that would
-    # make suggest_rebalance read every held name as a sell. Surface it as unavailable.
+    # Return unavailable on solver failure instead of an all-cash target.
     if not res.get("available", True):
         logger.warning("Portfolio optimisation unavailable: %s", res.get("error"))
         return _unavailable(budget, risk_profile, res.get("error"))
+
+    # Select unique candidates by historical weights and returns, then re-optimise the subset.
+    if target_positions and len(tickers) > target_positions:
+        w = res.get("weights", {})
+        by_weight = sorted(tickers, key=lambda t: float(w.get(t, 0.0)), reverse=True)
+        chosen = [t for t in by_weight if float(w.get(t, 0.0)) > 1e-6][:target_positions]
+        if len(chosen) < target_positions:
+            by_mu = sorted(tickers, key=lambda t: float(mu[tickers.index(t)]), reverse=True)
+            for t in by_mu:
+                if t not in chosen:
+                    chosen.append(t)
+                if len(chosen) >= target_positions:
+                    break
+        if chosen and set(chosen) != set(tickers):
+            idx = [tickers.index(t) for t in chosen]
+            sub_mu = np.array([mu[i] for i in idx])
+            sub_cov = cov[np.ix_(idx, idx)]
+            sub_res = mkw.optimize(
+                chosen, sub_mu, sub_cov, risk_profile, current_weights=current_weights, strict=strict
+            )
+            if sub_res.get("available", True):
+                res, tickers, mu, cov = sub_res, chosen, sub_mu, sub_cov
+                prices = {t: prices[t] for t in chosen}
     alloc = mkw.to_shares(res["weights"], prices, budget, allow_fractional=False, fee_rate=tx_cost)
 
     holdings = []
     for h in alloc["holdings"]:
         t = h["ticker"]
         meta = ml_meta.get(t, {})
-        # model expected return (LSTM, over the prediction horizon) is a DECIMAL or
-        # None; expose it unambiguously in BOTH units and never mix it with the
-        # annualised historical mean (a separate, clearly-named field).
+        # Expose horizon return forecasts in decimal and percentage units.
         mdl = meta.get("predicted_return")
         holdings.append(
             {
                 "ticker": t,
-                # The optimiser CHOSE to allocate to this name from historical risk/return;
-                # that is NOT an ML "BUY". Keep the two distinct: allocation_action is the
-                # optimiser's decision, signal is the (firewalled) ML classification if any.
+                # Keep the historical allocation decision separate from the model's trading signal.
                 "allocation_action": "ALLOCATE",
                 "signal": (meta.get("signal") or "N/A"),
                 "shares": h["shares"],
                 "price": h["price"],
                 "total_cost": h["cost"],
                 "fee": h["fee"],
-                "weight_pct": h["realised_weight_pct"],  # EXECUTED weight, not target
-                # display-only metadata from the prediction leg (never feeds the optimiser)
+                "weight_pct": h["realised_weight_pct"],  # executed weight
+                # Display-only forecast metadata.
                 "expected_return_decimal": (round(float(mdl), 6) if mdl is not None else None),
                 "expected_return_pct": (round(float(mdl) * 100, 4) if mdl is not None else None),
-                "predicted_return": (round(float(mdl) * 100, 4) if mdl is not None else None),  # pct alias
+                "predicted_return": (round(float(mdl) * 100, 4) if mdl is not None else None),  # percentage alias
                 "sentiment": str(meta.get("sentiment", "n/a")),
                 "composite_score": meta.get("composite_score"),
                 "hist_mean_return_pct": round(float(mu[tickers.index(t)]) * 100, 2),
             }
         )
 
-    # Portfolio statistics recomputed from the EXECUTED whole-share book (+ cash),
-    # not the optimiser's pre-rounding target weights. With a small budget the
-    # rounded holdings can differ materially from the target, so reporting the
-    # target's return/vol/Sharpe would describe a portfolio the user does not hold.
+    # Calculate portfolio statistics from executed shares and remaining cash.
     exec_tickers = [h["ticker"] for h in alloc["holdings"]]
     idx = [tickers.index(t) for t in exec_tickers]
     w_exec = np.array([h["realised_weight_pct"] / 100.0 for h in alloc["holdings"]], dtype=float)
@@ -207,10 +185,7 @@ def build_markowitz_portfolio(
         exp_a = vol_a = 0.0
         sharpe = var95 = cvar95 = 0.0
 
-    # Held names that fall OUTSIDE the optimiser universe (dropped by the
-    # liquidity screen or absent from the returns frame) are not part of the new
-    # target and would otherwise disappear silently. Surface them explicitly so the
-    # caller can see they are being liquidated rather than quietly forgotten.
+    # Report existing holdings excluded from the proposed allocation universe.
     excluded_holdings = []
     if current_holdings:
         uni = set(tickers)
@@ -235,10 +210,10 @@ def build_markowitz_portfolio(
             "n_positions": len(holdings),
             "total_invested": alloc["invested"],
             "fees": alloc["fees"],
-            "cash_remaining": alloc["cash_remaining"],  # real reconciled cash (never clamped)
+            "cash_remaining": alloc["cash_remaining"],  # reconciled cash
             "cash_weight_pct": alloc["cash_weight_pct"],
             "risk_profile": risk_profile,
-            # executed-book statistics (cash earns 0, so it dilutes the return)
+            # Executed-book statistics; cash earns zero.
             "expected_portfolio_return": round(exp_a * 100, 4),
             "stats_basis": "executed_holdings_incl_cash",
             "risk_metrics": {
@@ -247,7 +222,7 @@ def build_markowitz_portfolio(
                 "var_95_1day": var95,
                 "cvar_95_1day": cvar95,
             },
-            # the optimiser's pre-rounding target stats, kept for reference only
+            # Pre-rounding target statistics for reference.
             "target_stats": {
                 "expected_portfolio_return": round(res["expected_return"] * 100, 4),
                 "annualized_sharpe": res["sharpe"],
@@ -265,9 +240,7 @@ def build_markowitz_portfolio(
 
 
 def _unavailable(budget: float, risk_profile: str, error: str = None) -> dict:
-    """Explicit unavailable result when optimisation fails. Distinct from _empty
-    (a legitimate all-cash outcome): callers must NOT treat this as a target, so a
-    solver failure never becomes a recommendation to liquidate the book."""
+    """Represent optimisation failure separately from a valid all-cash allocation."""
     return {
         "portfolio": {
             "available": False,
