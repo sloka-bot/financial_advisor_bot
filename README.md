@@ -78,6 +78,38 @@ does not work. Create a risk profile and budget, or import holdings, then review
 proposals on the Portfolio page. Approving a proposal updates the local portfolio
 only and does not place a brokerage order.
 
+## Data
+
+The price, feature and news data (about 7 GB) is not included in the repository
+because of its size, so the demonstration runs from the author's machine. The
+trained models in `models/` and the saved evaluation results in
+`data/experiments/` are included, so the reported figures can be inspected
+without the raw data. The steps below recreate the data from scratch. They need
+an internet connection and take several hours on the full universe; all commands
+run from the project root with the virtual environment active.
+
+```bash
+source venv/bin/activate
+
+# 1. Historical news (optional). Download the FNSPID news file (about 23 GB):
+mkdir -p data/fnspid
+curl -L -o data/fnspid/nasdaq_exteral_data.csv \
+  "https://huggingface.co/datasets/Zihan1004/FNSPID/resolve/main/Stock_news/nasdaq_exteral_data.csv?download=true"
+python scripts/extract_fnspid_news.py            # per-ticker S&P 500 news
+python scripts/build_finbert_input.py            # deduplicated articles per ticker
+python scripts/score_historical_sentiment.py     # FinBERT scores (downloads the model on first run)
+
+# 2. Prices, cleaning, technical features and fused datasets:
+python scripts/rebuild_data.py
+```
+
+Step 1 can be skipped for a quicker setup; sentiment features then default to
+neutral values. Step 2 downloads prices from Yahoo Finance and the historical
+S&P 500 membership list, and writes the datasets the app and training scripts
+read. Running `scripts/rebuild_data.py` again later downloads only new sessions;
+run it after the US market close so the latest session has an observed closing
+price, then use Generate new recommendations on the Portfolio page.
+
 ## Regenerating models
 
 Optional. The saved models were produced with the commands below, which only need

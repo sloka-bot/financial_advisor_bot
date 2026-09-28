@@ -1,5 +1,6 @@
 """Stream the FNSPID CSV into per-ticker S&P 500 news files with resumable checkpoints."""
 
+import argparse
 import json
 import os
 import time
@@ -8,7 +9,6 @@ from collections import Counter
 import pandas as pd
 
 ROOT = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
-F = os.path.expanduser("~/mnt/Desktop/fnspid_news.csv")
 D = os.path.join(ROOT, "data", "fnspid")
 OUT = os.path.join(D, "raw")
 STATE = os.path.join(D, "state.json")
@@ -25,7 +25,15 @@ match_set = set(canon)
 
 COLS = ["Date", "Stock_symbol", "Article_title", "Textrank_summary"]
 CHUNK = 250_000
-TIME_BUDGET = 150  # seconds of work before a checkpointed stop
+
+parser = argparse.ArgumentParser()
+parser.add_argument(
+    "csv", nargs="?", default=os.path.join(D, "nasdaq_exteral_data.csv"), help="path to the FNSPID news CSV"
+)
+parser.add_argument("--time-budget", type=int, default=0, help="seconds before a checkpointed stop; 0 runs to the end")
+args = parser.parse_args()
+F = os.path.expanduser(args.csv)
+TIME_BUDGET = args.time_budget
 
 # Load or initialise the checkpoint.
 if os.path.exists(STATE):
@@ -86,7 +94,7 @@ for chunk in reader:
         },
         open(PROG, "w"),
     )
-    if time.time() - t0 > TIME_BUDGET:
+    if TIME_BUDGET and time.time() - t0 > TIME_BUDGET:
         stopped_early = True
         break
 

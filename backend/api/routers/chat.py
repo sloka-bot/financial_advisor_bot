@@ -105,7 +105,7 @@ def chat(req: ChatRequest):
                 "model": settings.OLLAMA_MODEL,
                 "prompt": prompt,
                 "stream": False,
-                "options": {"temperature": 0.4 if req.mode == "beginner" else 0.3, "num_predict": 220},
+                "options": {"temperature": 0, "seed": 42, "num_predict": 220},
             },
             timeout=45,  # first call loads the model into memory
         )

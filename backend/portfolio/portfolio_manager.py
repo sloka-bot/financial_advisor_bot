@@ -12,10 +12,9 @@ DRIFT_THRESHOLD = 0.05  # rebalance when weight drifts over 5% from target
 
 
 class PortfolioManager:
-    # Rebalancing suggestions.
-
     """Calculate holding evidence, risk metrics and rebalance suggestions."""
 
+    # Rebalancing suggestions.
     def suggest_rebalance(
         self, holdings: list, master_data: dict, ranked_df=None, risk_profile="moderate", cash: float = 0.0
     ) -> list:

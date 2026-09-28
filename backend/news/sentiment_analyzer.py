@@ -143,7 +143,6 @@ class SentimentAnalyzer:
         return daily
 
     def analyze_universe(self, tickers, progress_cb=None):
-        # Load FinBERT only when new articles require scoring.
         """Process each ticker and report successful, skipped and failed inputs."""
         results = {"success": [], "skipped": [], "failed": []}
         self._trunc_scored = 0
